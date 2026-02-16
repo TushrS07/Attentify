@@ -1,0 +1,29 @@
+backend/
+│── 📂 src/
+│   │── 📂 config/              # Configuration files (DB, Email, Env)
+│   │   │── db.js               # Database connection (MongoDB / PostgreSQL)
+│   │   │── email.js            # Email setup (Nodemailer)
+│   │── 📂 middlewares/         # Middleware (Auth, Validation)
+│   │   │── authMiddleware.js   # JWT authentication middleware
+│   │   │── validation.js       # Input validation middleware
+│   │── 📂 models/              # Database models (Schemas)
+│   │   │── Student.js          # Student schema
+│   │   │── Teacher.js          # Teacher schema
+│   │── 📂 routes/              # API Routes
+│   │   │── studentRoutes.js    # Routes for student signup & verification
+│   │   │── teacherRoutes.js    # Routes for teacher onboarding
+│   │── 📂 controllers/         # Business Logic
+│   │   │── studentController.js # Signup, OTP verification, image upload
+│   │   │── teacherController.js # Upload teacher sheet, email credentials
+│   │── 📂 services/            # Utility services
+│   │   │── otpService.js       # OTP generation & verification
+│   │   │── fileUpload.js       # Handle file uploads
+│   │   │── imageVerify.js      # Flask API call for live image verification
+│   │── app.js                  # Main Express app
+│── 📂 flask-image-verification/
+│   │── app.py                   # Flask server for image processing
+│   │── requirements.txt          # Dependencies (OpenCV, Flask)
+│── 📂 uploads/                   # Uploaded files (images, teacher sheets)
+│── package.json                  # Node.js dependencies
+│── .env                           # Environment variables
+│── README.md                      # Documentation

@@ -1,0 +1,7 @@
+{
+  "type": "module",
+  "dependencies": {
+    "mongoose": "^8.19.3",
+    "pm2": "^6.0.14"
+  }
+}
