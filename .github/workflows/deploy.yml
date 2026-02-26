@@ -43,10 +43,10 @@ jobs:
           ssh -i private_key.pem -o StrictHostKeyChecking=no \
             ${EC2_USERNAME}@${EC2_HOST} << 'EOF'
 
-            cd /project/Attentify
+            cd  /home/ubuntu/project/Attentify/backend
 
             echo "Fixing ownership..."
-            sudo chown -R $USER:$USER /project/Attentify
+            sudo chown -R $USER:$USER  /home/ubuntu/project/Attentify/backend
 
             # Backup current version
             if [ -f "package.json" ]; then
@@ -59,7 +59,7 @@ jobs:
             fi
 
             echo "Extracting new version..."
-            tar --overwrite -xzf /tmp/deploy.tar.gz -C /project/Attentify
+            tar --overwrite -xzf /tmp/deploy.tar.gz -C  /home/ubuntu/project/Attentify/backend
             rm /tmp/deploy.tar.gz
 
             echo "Installing production dependencies..."
@@ -123,13 +123,13 @@ jobs:
           ssh -i private_key.pem -o StrictHostKeyChecking=no \
             ${EC2_USERNAME}@${EC2_HOST} << 'EOF'
 
-            cd /project/Attentify
+            cd  /home/ubuntu/project/Attentify/backend
 
             latest_backup=$(ls -t backups/backup_*.tar.gz 2>/dev/null | head -1)
 
             if [ -n "$latest_backup" ]; then
               echo "Rolling back..."
-              tar -xzf "$latest_backup" -C /project/Attentify
+              tar -xzf "$latest_backup" -C  /home/ubuntu/project/Attentify/backend
               npm ci --omit=dev
               pm2 reload ecosystem.config.cjs
               echo "Rollback complete"
