@@ -16,13 +16,14 @@ jobs:
 
       - name: Create deployment package
         run: |
-          mkdir deploy
+          rm -rf deploy deploy.tar.gz
+          mkdir -p deploy
+
           cp backend/app.js deploy/
-          cp -r backend/routes deploy/
-          cp -r backend/controllers deploy/
-          cp -r backend/models deploy/
+          cp -r backend/src deploy/src
           cp backend/package*.json deploy/
           cp backend/ecosystem.config.cjs deploy/
+
           tar -czf deploy.tar.gz -C deploy .
 
       - name: Deploy to EC2 via SSH
