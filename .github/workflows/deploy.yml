@@ -74,7 +74,7 @@ jobs:
             ${EC2_USERNAME}@${EC2_HOST} << 'EOF'
             
             # Navigate to app directory
-            cd /var/www/express-app
+            cd /project/Attentify
 
             # Fix ownership first (important!)
             echo "Fixing directory ownership..."
@@ -171,7 +171,7 @@ jobs:
           ssh -i private_key.pem -o StrictHostKeyChecking=no \
             ${EC2_USERNAME}@${EC2_HOST} << 'EOF'
             
-            cd /var/www/express-app
+            cd /project/Attentify
 
             # Fix ownership first (important!)
             sudo chown -R $USER:$USER /var/www/express-app
