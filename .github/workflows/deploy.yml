@@ -78,7 +78,7 @@ jobs:
 
             # Fix ownership first (important!)
             echo "Fixing directory ownership..."
-            sudo chown -R $USER:$USER /var/www/express-app
+            sudo chown -R $USER:$USER /project/Attentify
             
             
             # Backup current version
@@ -92,11 +92,11 @@ jobs:
             
             # Extract new version (this will overwrite existing files)
             echo "Extracting new deployment package..."
-            tar --overwrite -xzf /tmp/deploy.tar.gz -C /var/www/express-app
+            tar --overwrite -xzf /tmp/deploy.tar.gz -C /project/Attentify
             rm /tmp/deploy.tar.gz
 
             # Fix ownership after extraction
-            sudo chown -R $USER:$USER /var/www/express-app
+            sudo chown -R $USER:$USER /project/Attentify
             
             
             # Install production dependencies on the server
@@ -174,14 +174,14 @@ jobs:
             cd /project/Attentify
 
             # Fix ownership first (important!)
-            sudo chown -R $USER:$USER /var/www/express-app
+            sudo chown -R $USER:$USER /project/Attentify
             
             # Find latest backup
             latest_backup=$(ls -t backups/backup_*.tar.gz 2>/dev/null | head -1)
             
             if [ -n "$latest_backup" ]; then
               echo "Found backup: $latest_backup"
-              tar -xzf "$latest_backup" -C /var/www/express-app
+              tar -xzf "$latest_backup" -C /project/Attentify
               npm ci
               pm2 reload ecosystem.config.cjs
               echo "✅ Rolled back to previous version"
