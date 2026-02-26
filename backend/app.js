@@ -74,6 +74,11 @@ app.get('/test',(req,res)=> {
   res.send("Welcome to the Attendance Management System API");
 })
 
+
+app.get('/test2',(req,res)=> {
+  res.send("Welcome to the ..................... Attendance Management System API");
+})
+  
 // Start server inside async function
 (async () => {
   try {
