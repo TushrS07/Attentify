@@ -101,11 +101,14 @@ jobs:
           for i in {1..3}; do
             echo "Attempt $i..."
             http_code="000"
-            http_code=$(curl -sS -L --max-time 15 -o /dev/null -w "$url" || echo "000")
+            http_code=$(curl -sS -L --max-time 15 \
+              -o /dev/null \
+              -w "%{http_code}" \
+              "$url" || echo "000")
             
-            echo "Got HTTP code: '$http_code'"
+            echo "Got HTTP code: '%http_code'"
 
-            if [ "$http_code" = "200" ]; then
+            if [ "%http_code" = "200" ]; then
               echo "Deployment successful!"
               exit 0
             fi
