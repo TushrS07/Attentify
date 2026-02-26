@@ -1,36 +1,6 @@
 // server.js
 // ⚠️ IMPORTANT: Load environment variables FIRST before any other imports
 import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
-import fs from "fs";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const envPath = path.resolve(__dirname, "../.env");
-
-// Debug: Check if .env file exists
-console.log(`[INIT] 🔍 Looking for .env at: ${envPath}`);
-console.log(`[INIT] 📁 .env file exists: ${fs.existsSync(envPath)}`);
-
-const result = dotenv.config({ path: envPath });
-
-if (result.error) {
-  console.error(`[INIT] ❌ Error loading .env: ${result.error.message}`);
-} else {
-  console.log(`[INIT] ✅ Environment variables loaded from: ${envPath}`);
-  console.log(`[INIT] 🔑 Sample env check - NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
-  console.log(`[INIT] 🔑 Sample env check - PORT: ${process.env.PORT || 'not set'}`);
-}
-
-// Verify critical environment variables
-console.log('\n[CONFIG] 🔍 Verifying configurations...');
-console.log(`[CONFIG] ${process.env.CLOUDINARY_CLOUD_NAME ? '✅' : '❌'} Cloudinary: ${process.env.CLOUDINARY_CLOUD_NAME || 'NOT CONFIGURED'}`);
-console.log(`[CONFIG] ${process.env.EMAIL ? '✅' : '❌'} Email: ${process.env.EMAIL || 'NOT CONFIGURED'}`);
-console.log(`[CONFIG] ${process.env.TWILIO_ACCOUNT_SID ? '✅' : '❌'} Twilio: ${process.env.TWILIO_ACCOUNT_SID ? process.env.TWILIO_ACCOUNT_SID.substring(0, 10) + '...' : 'NOT CONFIGURED'}`);
-console.log(`[CONFIG] ${process.env.MONGO_URI ? '✅' : '❌'} MongoDB: ${process.env.MONGO_URI ? 'Configured' : 'NOT CONFIGURED'}`);
-console.log(`[CONFIG] ${process.env.JWT_SECRET ? '✅' : '❌'} JWT Secret: ${process.env.JWT_SECRET ? 'Configured' : 'NOT CONFIGURED'}\n`);
-
 // Now import everything else AFTER env vars are loaded
 import express from "express";
 import cors from "cors";
