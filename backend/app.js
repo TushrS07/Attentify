@@ -70,6 +70,9 @@ app.use("/api/teacher", teacherRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/attendance", attendanceRoutes);
 
+app.get('/test',(req,res)=> {
+  res.send("Welcome to the Attendance Management System API");
+})
 
 // Start server inside async function
 (async () => {
