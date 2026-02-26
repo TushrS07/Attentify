@@ -106,9 +106,9 @@ jobs:
               -w "%{http_code}" \
               "$url" || echo "000")
             
-            echo "Got HTTP code: '%http_code'"
+            echo "Got HTTP code: '$http_code'"
 
-            if [ "%http_code" = "200" ]; then
+            if [ "$http_code" = "200" ]; then
               echo "Deployment successful!"
               exit 0
             fi
