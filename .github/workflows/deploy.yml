@@ -3,57 +3,28 @@ name: Deploy to EC2
 on:
   push:
     branches: [main]
-  workflow_dispatch: # manual trigger
+  workflow_dispatch:
 
 jobs:
-  build:
-    name: Build Application
+  deploy:
+    name: Deploy Application
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20.13.1"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build TypeScript
-        run: npm run build
-
-      - name: Create deployment package (without node_modules)
+      - name: Create deployment package
         run: |
-          mkdir -p deploy
-          cp -r dist deploy/
-          cp -r src deploy/
+          mkdir deploy
+          cp server.js deploy/ 2>/dev/null || true
+          cp app.js deploy/ 2>/dev/null || true
+          cp -r routes deploy/ 2>/dev/null || true
+          cp -r controllers deploy/ 2>/dev/null || true
+          cp -r models deploy/ 2>/dev/null || true
           cp package*.json deploy/
           cp ecosystem.config.cjs deploy/
-          # Copy .env.example if exists
-          [ -f .env.example ] && cp .env.example deploy/ || echo "No .env.example found"
           tar -czf deploy.tar.gz -C deploy .
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: deployment-package
-          path: deploy.tar.gz
-          retention-days: 1
-
-  deploy:
-    name: Deploy to EC2
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: deployment-package
 
       - name: Deploy to EC2 via SSH
         env:
@@ -61,133 +32,111 @@ jobs:
           EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
-          # Create SSH key file
           echo "$SSH_PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
 
-          # Copy deployment package to EC2
+          # Upload package
           scp -i private_key.pem -o StrictHostKeyChecking=no \
             deploy.tar.gz ${EC2_USERNAME}@${EC2_HOST}:/tmp/
 
-          # SSH into EC2 and deploy
+          # SSH & deploy
           ssh -i private_key.pem -o StrictHostKeyChecking=no \
             ${EC2_USERNAME}@${EC2_HOST} << 'EOF'
-            
-            # Navigate to app directory
+
             cd /project/Attentify
 
-            # Fix ownership first (important!)
-            echo "Fixing directory ownership..."
+            echo "Fixing ownership..."
             sudo chown -R $USER:$USER /project/Attentify
-            
-            
+
             # Backup current version
-            if [ -d "dist" ]; then
+            if [ -f "package.json" ]; then
               timestamp=$(date +%Y%m%d_%H%M%S)
               mkdir -p backups
-              tar -czf backups/backup_${timestamp}.tar.gz dist package.json ecosystem.config.cjs .env 2>/dev/null || true
-              # Keep only last 5 backups
-              ls -t backups/backup_*.tar.gz 2>/dev/null | tail -n +6 | xargs -r rm
+              tar -czf backups/backup_${timestamp}.tar.gz \
+                package.json ecosystem.config.cjs .env \
+                server.js app.js routes controllers models 2>/dev/null || true
+              ls -t backups/backup_*.tar.gz | tail -n +6 | xargs -r rm
             fi
-            
-            # Extract new version (this will overwrite existing files)
-            echo "Extracting new deployment package..."
+
+            echo "Extracting new version..."
             tar --overwrite -xzf /tmp/deploy.tar.gz -C /project/Attentify
             rm /tmp/deploy.tar.gz
 
-            # Fix ownership after extraction
-            sudo chown -R $USER:$USER /project/Attentify
-            
-            
-            # Install production dependencies on the server
-            echo ""
             echo "Installing production dependencies..."
-            npm ci
-            
-            # Create .env file if needed (only on first deploy)
+            npm ci --omit=dev
+
+            # Create .env only if not exists
             if [ ! -f .env ]; then
-              echo "Creating default .env file..."
               echo "NODE_ENV=production" > .env
               echo "PORT=5000" >> .env
             fi
-            
-            # Create logs directory
+
             mkdir -p logs
-            
-            # Zero-downtime reload with PM2
+
+            # Start or reload with PM2
             if pm2 describe express-app > /dev/null 2>&1; then
-              echo "Reloading PM2 app (zero-downtime)..."
-              sudo pm2 reload ecosystem.config.cjs --update-env
+              echo "Reloading PM2..."
+              pm2 reload ecosystem.config.cjs --update-env
             else
-              echo "Starting new PM2 process..."
-              sudo pm2 start ecosystem.config.cjs
+              echo "Starting PM2..."
+              pm2 start ecosystem.config.cjs
             fi
-            
-            # Save PM2 process list
-            sudo pm2 save
-           
+
+            pm2 save
+
           EOF
 
-          # Cleanup
           rm private_key.pem
 
-      - name: Verify deployment
+      - name: Verify Deployment
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          echo "Waiting for application to start..."
+          echo "Waiting for app..."
           sleep 10
 
-          # Check if app responds via nginx (try multiple times)
-          for i in {1..2}; do
-            echo "Attempt $i of 2..."
-            response=$(curl -s -o /dev/null -w "%{http_code}" http://${EC2_HOST} 2>/dev/null || echo "000")
-            
-            if [ "$response" = "200" ] || [ "$response" = "301" ] || [ "$response" = "302" ]; then
-              echo "✅ Deployment successful! App is responding with status: $response"
+          for i in {1..3}; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" http://${EC2_HOST}/health || echo "000")
+
+            if [ "$response" = "200" ]; then
+              echo "✅ Deployment successful!"
               exit 0
             fi
-            
-            echo "Got response: $response, waiting 5 seconds..."
+
+            echo "Attempt $i failed. Retrying..."
             sleep 5
           done
 
-          echo "❌ Deployment verification failed after 2 attempts"
-          echo "Please check PM2 logs on the server"
+          echo "❌ Deployment failed"
           exit 1
 
-      - name: Rollback on failure
+      - name: Rollback on Failure
         if: failure()
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
           SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
-          echo "🔄 Attempting to rollback to previous version..."
-
           echo "$SSH_PRIVATE_KEY" > private_key.pem
           chmod 600 private_key.pem
 
           ssh -i private_key.pem -o StrictHostKeyChecking=no \
             ${EC2_USERNAME}@${EC2_HOST} << 'EOF'
-            
+
             cd /project/Attentify
 
-            # Fix ownership first (important!)
-            sudo chown -R $USER:$USER /project/Attentify
-            
-            # Find latest backup
             latest_backup=$(ls -t backups/backup_*.tar.gz 2>/dev/null | head -1)
-            
+
             if [ -n "$latest_backup" ]; then
-              echo "Found backup: $latest_backup"
+              echo "Rolling back..."
               tar -xzf "$latest_backup" -C /project/Attentify
-              npm ci
+              npm ci --omit=dev
               pm2 reload ecosystem.config.cjs
-              echo "✅ Rolled back to previous version"
+              echo "Rollback complete"
             else
-              echo "⚠️ No backup found, cannot rollback"
+              echo "No backup found"
             fi
+
           EOF
 
           rm private_key.pem
