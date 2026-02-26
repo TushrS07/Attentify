@@ -95,7 +95,7 @@ jobs:
           echo "Waiting for app..."
           sleep 10
 
-          url="http://${EC2_HOST}:5000/test"
+          url="http://${EC2_HOST}/test"
           echo "Checking: $url"
     
           for i in {1..3}; do
