@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: "express-app",
-      script: "app.js",
+      script: "server.js",
       cwd: "/home/ubuntu/project/Attentify/backend",
       env: {
         NODE_ENV: "production",
