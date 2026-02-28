@@ -14,18 +14,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # ===============================
+      # Create FULL backend package
+      # ===============================
       - name: Create deployment package
         run: |
           rm -rf deploy deploy.tar.gz
           mkdir -p deploy
-
-          cp backend/app.js deploy/
-          cp -r backend/src deploy/src
-          cp backend/package*.json deploy/
-          cp backend/ecosystem.config.cjs deploy/
-
+          cp -r backend/* deploy/
           tar -czf deploy.tar.gz -C deploy .
 
+      # ===============================
+      # Deploy to EC2
+      # ===============================
       - name: Deploy to EC2 via SSH
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
@@ -39,33 +40,37 @@ jobs:
           scp -i private_key.pem -o StrictHostKeyChecking=no \
             deploy.tar.gz ${EC2_USERNAME}@${EC2_HOST}:/tmp/
 
-          # SSH & deploy
+          # SSH into EC2
           ssh -i private_key.pem -o StrictHostKeyChecking=no \
             ${EC2_USERNAME}@${EC2_HOST} << 'EOF'
 
-            cd  /home/ubuntu/project/Attentify/backend
+            cd /home/ubuntu/project/Attentify
 
             echo "Fixing ownership..."
-            sudo chown -R $USER:$USER  /home/ubuntu/project/Attentify/backend
+            sudo chown -R $USER:$USER backend
 
-            # Backup current version
-            if [ -f "package.json" ]; then
+            # Backup current working version
+            if [ -f "backend/package.json" ]; then
               timestamp=$(date +%Y%m%d_%H%M%S)
-              mkdir -p backups
-              tar -czf backups/backup_${timestamp}.tar.gz \
-                package.json ecosystem.config.cjs .env \
-                server.js app.js routes controllers models 2>/dev/null || true
-              ls -t backups/backup_*.tar.gz | tail -n +6 | xargs -r rm
+              mkdir -p backend/backups
+              tar -czf backend/backups/backup_${timestamp}.tar.gz backend
+              ls -t backend/backups/backup_*.tar.gz | tail -n +6 | xargs -r rm
             fi
 
+            echo "Cleaning old backend..."
+            rm -rf backend/*
+            mkdir -p backend
+
             echo "Extracting new version..."
-            tar --overwrite -xzf /tmp/deploy.tar.gz -C  /home/ubuntu/project/Attentify/backend
+            tar -xzf /tmp/deploy.tar.gz -C backend
             rm /tmp/deploy.tar.gz
+
+            cd backend
 
             echo "Installing production dependencies..."
             npm ci --omit=dev
 
-            # Create .env only if not exists
+            # Ensure .env exists
             if [ ! -f .env ]; then
               echo "NODE_ENV=production" > .env
               echo "PORT=5000" >> .env
@@ -73,7 +78,7 @@ jobs:
 
             mkdir -p logs
 
-            # Start or reload with PM2
+            # Start or reload PM2
             if pm2 describe express-app > /dev/null 2>&1; then
               echo "Reloading PM2..."
               pm2 reload ecosystem.config.cjs --update-env
@@ -87,30 +92,38 @@ jobs:
           EOF
 
           rm private_key.pem
-          
+
+      # ===============================
+      # Verify Deployment (Wait properly)
+      # ===============================
       - name: Verify Deployment
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          echo "Waiting for app..."
+          echo "Waiting for app to become ready..."
 
           url="http://${EC2_HOST}/test"
           echo "Checking: $url"
-    
+
           for i in {1..20}; do
             http_code=$(curl -s -o /dev/null -w "%{http_code}" "$url" || echo "000")
-            
+
             echo "Attempt $i - HTTP $http_code"
-            
+
             if [ "$http_code" = "200" ]; then
               echo "Deployment successful!"
               exit 0
             fi
+
             sleep 5
           done
 
           echo "Deployment failed"
           exit 1
+
+      # ===============================
+      # Rollback on Failure
+      # ===============================
       - name: Rollback on Failure
         if: failure()
         env:
@@ -124,13 +137,16 @@ jobs:
           ssh -i private_key.pem -o StrictHostKeyChecking=no \
             ${EC2_USERNAME}@${EC2_HOST} << 'EOF'
 
-            cd  /home/ubuntu/project/Attentify/backend
+            cd /home/ubuntu/project/Attentify/backend
 
             latest_backup=$(ls -t backups/backup_*.tar.gz 2>/dev/null | head -1)
 
             if [ -n "$latest_backup" ]; then
               echo "Rolling back..."
-              tar -xzf "$latest_backup" -C  /home/ubuntu/project/Attentify/backend
+              cd ..
+              rm -rf backend
+              tar -xzf "$latest_backup"
+              cd backend
               npm ci --omit=dev
               pm2 reload ecosystem.config.cjs
               echo "Rollback complete"
