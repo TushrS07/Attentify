@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import os
 import requests
+import datetime
 from pymongo import MongoClient
 from threading import Lock
 import logging
@@ -12,9 +13,7 @@ from dotenv import load_dotenv
 from deepface import DeepFace
 from scipy.spatial.distance import cosine
 
-# Load .env from project root (parent directory)
-env_path = Path(__file__).resolve().parent.parent / '.env'
-load_dotenv(dotenv_path=env_path)
+load_dotenv() 
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -32,13 +31,13 @@ known_face_encodings = []
 known_face_names = []  # Stores rollNumbers
 
 # MongoDB connection settings from global .env
-MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017/')
-DB_NAME = os.environ.get('DB_NAME', 'attentify')
+MONGO_URI = os.getenv('MONGO_URI')
+DB_NAME = os.getenv('DB_NAME')
 
 # DeepFace model to use — Facenet is fast and accurate
 DEEPFACE_MODEL = "Facenet"
 # Cosine distance threshold: lower = stricter. 0.4 works well for Facenet
-RECOGNITION_THRESHOLD = float(os.environ.get('RECOGNITION_THRESHOLD', 0.4))
+RECOGNITION_THRESHOLD = float(os.getenv('RECOGNITION_THRESHOLD', 0.4))
 
 
 def get_face_embedding(img_rgb):
@@ -117,7 +116,7 @@ def find_best_match(unknown_encoding, local_encodings, local_names):
 
 
 def load_faces_from_database():
-    """Load face embeddings from MongoDB (students with uploadedImageUrl)."""
+    """Load face embeddings from MongoDB (students with faceEmbedding)."""
     global known_face_encodings, known_face_names
 
     try:
@@ -127,10 +126,10 @@ def load_faces_from_database():
 
         students = students_collection.find(
             {
-                'uploadedImageUrl': {'$exists': True, '$ne': None, '$ne': ''},
+                'faceEmbedding': {'$exists': True, '$ne': None},
                 'rollNumber': {'$exists': True, '$ne': None, '$ne': ''}
             },
-            {'rollNumber': 1, 'uploadedImageUrl': 1, 'name': 1}
+            {'rollNumber': 1, 'faceEmbedding': 1, 'name': 1}
         )
 
         new_encodings = []
@@ -140,20 +139,21 @@ def load_faces_from_database():
 
         for student in students:
             roll_number = student.get('rollNumber')
-            image_url = student.get('uploadedImageUrl')
+            embedding_data = student.get('faceEmbedding')
             name = student.get('name', 'Unknown')
 
-            if not roll_number or not image_url:
+            if not roll_number or not embedding_data:
                 continue
 
-            logger.info(f"Processing face for student: {name} ({roll_number})")
-            embedding = get_face_embedding_from_url(image_url)
-
-            if embedding is not None:
+            try:
+                # Convert embedding back to numpy array if stored as list
+                embedding = np.array(embedding_data) if isinstance(embedding_data, list) else embedding_data
                 new_encodings.append(embedding)
                 new_names.append(roll_number)
                 success_count += 1
-            else:
+                logger.info(f"Loaded face for student: {name} ({roll_number})")
+            except Exception as e:
+                logger.warning(f"Failed to load embedding for {roll_number}: {e}")
                 fail_count += 1
 
         client.close()
@@ -170,47 +170,6 @@ def load_faces_from_database():
         return 0, 0
 
 
-def load_faces_from_folder():
-    """Fallback: Load faces from local 'faces' folder."""
-    global known_face_encodings, known_face_names
-
-    faces_dir = "faces"
-
-    if not os.path.exists(faces_dir):
-        logger.warning(f"Faces directory '{faces_dir}' does not exist")
-        os.makedirs(faces_dir, exist_ok=True)
-        return 0, 0
-
-    new_encodings = []
-    new_names = []
-    success_count = 0
-    fail_count = 0
-
-    for img_file in os.listdir(faces_dir):
-        if not img_file.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
-            continue
-
-        img_path = os.path.join(faces_dir, img_file)
-        roll_number = os.path.splitext(img_file)[0]
-
-        logger.info(f"Processing local face: {img_file}")
-        embedding = get_face_embedding_from_file(img_path)
-
-        if embedding is not None:
-            new_encodings.append(embedding)
-            new_names.append(roll_number)
-            success_count += 1
-        else:
-            fail_count += 1
-
-    with face_data_lock:
-        known_face_encodings = new_encodings
-        known_face_names = new_names
-
-    logger.info(f"Loaded {success_count} faces from folder, {fail_count} failed")
-    return success_count, fail_count
-
-
 # ──────────────────────────────────────────────
 # Routes
 # ──────────────────────────────────────────────
@@ -219,22 +178,18 @@ def load_faces_from_folder():
 def health_check():
     with face_data_lock:
         face_count = len(known_face_encodings)
-    return jsonify({"status": "healthy", "loaded_faces": face_count})
+    return jsonify({"status": "healthy", "loaded_faces4678876768768": face_count})
 
 
 @app.route('/sync-faces', methods=['POST'])
 def sync_faces():
+    """Reload all face encodings from MongoDB."""
     try:
-        source = request.json.get('source', 'database') if request.is_json else 'database'
-
-        if source == 'folder':
-            success, failed = load_faces_from_folder()
-        else:
-            success, failed = load_faces_from_database()
+        success, failed = load_faces_from_database()
 
         return jsonify({
             "status": "success",
-            "message": f"Synced faces from {source}",
+            "message": "Synced faces from database",
             "loaded": success,
             "failed": failed,
             "total_faces": len(known_face_encodings)
@@ -276,6 +231,21 @@ def add_face():
 
             known_face_encodings.append(embedding)
             known_face_names.append(roll_number)
+
+        # Persist to MongoDB
+        try:
+            client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+            db = client[DB_NAME]
+            students_collection = db['students']
+            students_collection.update_one(
+                {'rollNumber': roll_number},
+                {'$set': {'faceEmbedding': embedding.tolist()}},
+                upsert=True
+            )
+            client.close()
+        except Exception as db_error:
+            logger.error(f"Warning: Face added to memory but failed to save to MongoDB: {db_error}")
+            # Continue anyway - face is in memory
 
         logger.info(f"Added/updated face for rollNumber: {roll_number}")
         return jsonify({
@@ -328,7 +298,7 @@ def recognize():
             if not known_face_encodings:
                 return jsonify({
                     "status": "error",
-                    "message": "No faces registered. Please sync faces first.",
+                    "message": "No faces registered. Please call POST /sync-faces or POST /bootstrap-local-faces-to-db",
                     "name": "UNKNOWN",
                     "confidence": 0
                 }), 503
@@ -362,6 +332,7 @@ def recognize():
 
 @app.route('/faces', methods=['GET'])
 def list_faces():
+    """List all currently loaded face rollNumbers."""
     with face_data_lock:
         return jsonify({
             "status": "success",
@@ -370,37 +341,203 @@ def list_faces():
         })
 
 
+@app.route('/mark-attendance', methods=['POST'])
+def mark_attendance():
+    """Mark attendance for a recognized student with rollNumber and confidence."""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"status": "error", "message": "No JSON data provided"}), 400
+
+        roll_number = data.get('rollNumber')
+        confidence = data.get('confidence', 0)
+        timestamp = data.get('timestamp')  # ISO format timestamp from client
+
+        if not roll_number:
+            return jsonify({"status": "error", "message": "rollNumber is required"}), 400
+
+        if confidence < 0 or confidence > 100:
+            return jsonify({"status": "error", "message": "confidence must be between 0 and 100"}), 400
+
+        # Connect to MongoDB and insert attendance record
+        client = None
+        try:
+            client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+            db = client[DB_NAME]
+            attendance_collection = db['attendances']
+
+            # Create attendance record
+            attendance_record = {
+                'rollNumber': roll_number,
+                'confidence': confidence,
+                'timestamp': timestamp or datetime.datetime.utcnow().isoformat(),
+                'recognized': confidence >= RECOGNITION_THRESHOLD  # True if confidence meets threshold
+            }
+
+            result = attendance_collection.insert_one(attendance_record)
+
+            logger.info(f"Attendance marked for {roll_number} with confidence {confidence}%")
+            return jsonify({
+                "status": "success",
+                "message": f"Attendance marked for rollNumber: {roll_number}",
+                "attendanceId": str(result.inserted_id),
+                "rollNumber": roll_number,
+                "confidence": confidence,
+                "recognized": confidence >= RECOGNITION_THRESHOLD
+            }), 201
+        finally:
+            if client:
+                client.close()
+
+    except Exception as e:
+        logger.error(f"Error marking attendance: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @app.route('/remove-face/<roll_number>', methods=['DELETE'])
 def remove_face(roll_number):
-    with face_data_lock:
-        if roll_number not in known_face_names:
+    """Remove a face by rollNumber from memory and MongoDB."""
+    try:
+        # Remove from memory
+        with face_data_lock:
+            if roll_number not in known_face_names:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Face with rollNumber {roll_number} not found"
+                }), 404
+
+            idx = known_face_names.index(roll_number)
+            known_face_names.pop(idx)
+            known_face_encodings.pop(idx)
+
+        # Remove from MongoDB
+        client = None
+        try:
+            client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+            db = client[DB_NAME]
+            students_collection = db['students']
+            students_collection.update_one(
+                {'rollNumber': roll_number},
+                {'$unset': {'faceEmbedding': ''}}
+            )
+        finally:
+            if client:
+                client.close()
+
+        logger.info(f"Removed face for rollNumber: {roll_number}")
+        return jsonify({
+            "status": "success",
+            "message": f"Face removed for rollNumber: {roll_number}",
+            "total_faces": len(known_face_names)
+        })
+
+    except Exception as e:
+        logger.error(f"Error removing face: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/bootstrap-local-faces-to-db', methods=['POST'])
+def bootstrap_local_faces_to_db():
+    """
+    Bootstrap: Process local face images, extract embeddings, store in MongoDB.
+    Assumes images are in 'faces/' folder with naming: {rollNumber}.{ext}
+    """
+    client = None
+    try:
+        data = request.json if request.is_json else {}
+        source_folder = data.get('sourceFolder', 'faces')
+
+        if not os.path.exists(source_folder):
             return jsonify({
                 "status": "error",
-                "message": f"Face with rollNumber {roll_number} not found"
-            }), 404
+                "message": f"Folder '{source_folder}' does not exist"
+            }), 400
 
-        idx = known_face_names.index(roll_number)
-        known_face_names.pop(idx)
-        known_face_encodings.pop(idx)
+        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+        db = client[DB_NAME]
+        students_collection = db['students']
 
-    logger.info(f"Removed face for rollNumber: {roll_number}")
-    return jsonify({
-        "status": "success",
-        "message": f"Face removed for rollNumber: {roll_number}",
-        "total_faces": len(known_face_names)
-    })
+        processed = 0
+        uploaded = 0
+        updated = 0
+        failed = 0
+        skipped = 0
+
+        # Process each image file
+        for img_file in os.listdir(source_folder):
+            if not img_file.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                continue
+
+            img_path = os.path.join(source_folder, img_file)
+            roll_number = os.path.splitext(img_file)[0]
+
+            if not roll_number:
+                skipped += 1
+                logger.warning(f"Skipped {img_file} - no valid rollNumber")
+                continue
+
+            logger.info(f"Processing: {img_file} → rollNumber: {roll_number}")
+            processed += 1
+
+            # Extract embedding from local image
+            embedding = get_face_embedding_from_file(img_path)
+
+            if embedding is None:
+                failed += 1
+                logger.error(f"Failed to extract embedding from {img_file}")
+                continue
+
+            # Check if student exists
+            student = students_collection.find_one({'rollNumber': roll_number})
+
+            if student:
+                # Update existing student
+                students_collection.update_one(
+                    {'rollNumber': roll_number},
+                    {'$set': {'faceEmbedding': embedding.tolist()}}  # Store as list for JSON compatibility
+                )
+                updated += 1
+                logger.info(f"Updated face embedding for rollNumber: {roll_number}")
+            else:
+                # Create new student record
+                students_collection.insert_one({
+                    'rollNumber': roll_number,
+                    'faceEmbedding': embedding.tolist(),
+                    'createdAt': datetime.datetime.utcnow()
+                })
+                uploaded += 1
+                logger.info(f"Created new student with rollNumber: {roll_number}")
+
+        # Reload faces into memory
+        success, fail_load = load_faces_from_database()
+
+        return jsonify({
+            "status": "success",
+            "message": f"Bootstrap complete. Processed {processed} images",
+            "processed": processed,
+            "uploaded": uploaded,
+            "updated": updated,
+            "skipped": skipped,
+            "failed": failed,
+            "faces_loaded_in_memory": success
+        }), 201
+
+    except Exception as e:
+        logger.error(f"Error during bootstrap: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        if client:
+            client.close()
 
 
 def initialize():
-    """Initialize face data on application startup."""
+    """Initialize face data on application startup from MongoDB."""
     logger.info("Initializing face recognition service...")
     success, failed = load_faces_from_database()
-
+    logger.info(f"Initialization complete. {len(known_face_encodings)} faces loaded. (Success: {success}, Failed: {failed})")
+    
     if success == 0:
-        logger.info("No faces loaded from database, trying local folder...")
-        success, failed = load_faces_from_folder()
-
-    logger.info(f"Initialization complete. {len(known_face_encodings)} faces loaded.")
+        logger.warning("⚠️ WARNING: No faces loaded from MongoDB on startup. Call POST /bootstrap-local-faces-to-db to load faces from local folder or use POST /add-face to enroll individual students.")
 
 
 if __name__ == '__main__':
