@@ -1,160 +1,80 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { IoReorderThreeOutline } from "react-icons/io5";
-import { FaTimes, FaListOl } from "react-icons/fa";
-import { FaChevronDown, FaChevronUp, FaRegUser, FaTable, FaRegEdit, FaNotesMedical    } from "react-icons/fa";
-import { TbLayoutDashboard, TbLogout  } from "react-icons/tb";
-import { IoMdCheckmarkCircleOutline } from "react-icons/io";
-import { BiSpreadsheet } from "react-icons/bi";
+import { Menu, X, LayoutDashboard, FileUp, LogOut, Shield } from "lucide-react";
 
+export default function HeaderAdmin() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-export default function Header() {
-  const [isTaskbarOpen, setIsTaskbarOpen] = useState(false);
-  const [expandedMenu, setExpandedMenu] = useState(null);
-
-  const toggleTaskbar = () => {
-    setIsTaskbarOpen(!isTaskbarOpen);
-  };
-
-  const closeTaskbar = () => {
-    setIsTaskbarOpen(false);
-  };
-
-  const toggleSubMenu = (menu) => {
-    setExpandedMenu(expandedMenu === menu ? null : menu);
-  };
-
-  // Close taskbar when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest(".taskbar") && !event.target.closest(".menu-button")) {
-        closeTaskbar();
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleOutside = (e) => {
+      if (!e.target.closest(".taskbar") && !e.target.closest(".menu-button")) {
+        setIsOpen(false);
       }
     };
-
-    if (isTaskbarOpen) {
-      document.addEventListener("click", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-    };
-  }, [isTaskbarOpen]);
+    if (isOpen) document.addEventListener("click", handleOutside);
+    return () => document.removeEventListener("click", handleOutside);
+  }, [isOpen]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white shadow-lg z-50">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="text-xl font-bold text-blue-700">
-          Attentify
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
+      scrolled ? "bg-white/95 backdrop-blur-md shadow-md border-b border-slate-100" : "bg-white shadow-sm border-b border-slate-100"
+    }`}>
+      <div className="container mx-auto px-4 h-14 flex items-center justify-between">
+        <Link to="/" className="flex items-center gap-2.5">
+          <div className="w-7 h-7 bg-slate-800 rounded-md flex items-center justify-center text-white font-bold text-xs">A</div>
+          <span className="text-lg font-bold text-slate-900 tracking-tight font-serif">Attentify</span>
+          <span className="px-2 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 rounded-full uppercase tracking-wider hidden sm:inline">Admin</span>
         </Link>
 
-        {/* Menu Button (visible on small screens) */}
-        <button className="text-5xl text-black menu-button custom:hidden" onClick={toggleTaskbar}>
-          <IoReorderThreeOutline />
+        <button className="text-slate-700 menu-button custom:hidden p-1.5 rounded-md hover:bg-slate-100 transition-colors" onClick={() => setIsOpen(!isOpen)}>
+          {isOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
-      {/* Taskbar Popup */}
-      <div
-        className={`fixed top-0 right-0 h-full w-64 bg-white shadow-lg transform ${
-          isTaskbarOpen ? "translate-x-0" : "translate-x-full"
-        } transition-transform duration-300 ease-in-out taskbar`}
-      >
-        <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-lg font-bold">Menu</h2>
-          <button className="text-xl text-gray-700" onClick={closeTaskbar}>
-            <FaTimes />
+      {/* Mobile Drawer */}
+      <div className={`fixed top-0 right-0 h-full w-72 bg-white shadow-2xl transform ${
+        isOpen ? "translate-x-0" : "translate-x-full"
+      } transition-transform duration-300 ease-in-out taskbar overflow-y-auto border-l border-slate-100`}>
+        <div className="flex justify-between items-center p-4 border-b border-slate-100 bg-slate-900">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-slate-700 rounded-md flex items-center justify-center text-white font-bold text-xs">A</div>
+            <span className="text-white font-bold tracking-tight">Admin Panel</span>
+          </div>
+          <button className="text-slate-400 hover:text-white transition-colors" onClick={() => setIsOpen(false)}>
+            <X size={20} />
           </button>
         </div>
-        <ul className="p-4 space-y-4">
-          <li>
-            <Link to="/teacher" className="flex items-center gap-2 justify-start text-gray-700 hover:text-blue-600">
-              <TbLayoutDashboard />
-              Dashboard
-            </Link>
-          </li>
-          <li>
-            <Link to="/timetable" className="flex items-center gap-2 justify-start text-gray-700 hover:text-blue-600">
-              <FaTable />
-              Time Table
-            </Link>
-          </li>
-          
-          {/* Attendance Section */}
-          <li>
-            <button
-              onClick={() => toggleSubMenu("attendance")}
-              className="flex justify-between w-full text-gray-700 hover:text-blue-600"
-            >
-              Attendance {expandedMenu === "attendance" ? <FaChevronUp /> : <FaChevronDown />}
-            </button>
-            {expandedMenu === "attendance" && (
-              <ul className="pl-4 mt-2 space-y-2">
-                <li>
-                  <Link to="/takeattendance" className="flex items-center gap-2 justify-start text-gray-600 hover:text-blue-500">
-                    <IoMdCheckmarkCircleOutline />
-                    Mark Attendance
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/editattendance" className="flex items-center gap-2 justify-start text-gray-600 hover:text-blue-500">
-                    <FaRegEdit  />
-                    Edit Attendance
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/generatesheet" className="flex items-center gap-2 justify-start text-gray-600 hover:text-blue-500">
-                    <BiSpreadsheet />
-                    Generate Sheet
-                  </Link>
-                </li>
-              </ul>
-            )}
-          </li>
 
-          {/* Classes Section */}
-          <li>
-            <button
-              onClick={() => toggleSubMenu("classes")}
-              className="flex justify-between w-full text-gray-700 hover:text-blue-600"
-            >
-              Students {expandedMenu === "classes" ? <FaChevronUp /> : <FaChevronDown />}
-            </button>
-            {expandedMenu === "classes" && (
-              <ul className="pl-4 mt-2 space-y-2">
-                <li>
-                  <Link to="/studentlist" className="flex items-center gap-2 justify-start text-gray-600 hover:text-blue-500">
-                    <FaListOl />
-                    Student List
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/medicalreport" className="flex items-center gap-2 justify-start text-gray-600 hover:text-blue-500">
-                    <FaNotesMedical  />  
-                    Medical Report
-                  </Link>
-                </li>
-              </ul>
-            )}
-          </li>
-
-          {/* Profile Section */}
-          <li>
-            <Link to="/profile" className="flex items-center gap-2 justify-start text-gray-700 hover:text-blue-600">
-              <FaRegUser />
-              Profile
+        <nav className="p-4 space-y-1">
+          {[
+            { to: "/admin", label: "Dashboard", Icon: LayoutDashboard },
+            { to: "/admin", label: "Credential Generator", Icon: FileUp },
+          ].map(({ to, label, Icon }) => (
+            <Link key={label} to={to} onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition-colors text-sm font-medium">
+              <Icon size={16} /> {label}
             </Link>
-          </li>
+          ))}
 
-          {/* Logout Section */}
-          <li>
-            <Link to="/admin/login" className="flex items-center gap-2 justify-start text-gray-700 hover:text-blue-600">
-              <TbLogout />
-              Logout
+          <div className="border-t border-slate-100 pt-3 mt-3">
+            <Link to="/admin/login" onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors text-sm font-medium">
+              <LogOut size={16} /> Logout
             </Link>
-          </li>
-        </ul>
+          </div>
+        </nav>
       </div>
+
+      {isOpen && (
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[-1] custom:hidden" onClick={() => setIsOpen(false)} />
+      )}
     </header>
   );
 }

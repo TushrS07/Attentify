@@ -4,145 +4,89 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { API_URL } from "../../config/api";
+import { Lock, Eye, EyeOff } from "lucide-react";
 
 export default function ResetPassword() {
-  const [formData, setFormData] = useState({
-    oldPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-
+  const [formData, setFormData] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
   const [loading, setLoading] = useState(false);
-
+  const [show, setShow] = useState({ old: false, new: false, confirm: false });
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
-    // Basic password validation
     if (formData.newPassword.length < 8) {
       toast.error("Password must be at least 8 characters long.");
-      setLoading(false);
-      return;
+      setLoading(false); return;
     }
-
     if (formData.newPassword !== formData.confirmPassword) {
       toast.error("Passwords do not match.");
-      setLoading(false);
-      return;
+      setLoading(false); return;
     }
-
     try {
-      const response = await axios.post(
-        `${API_URL}/api/student/reset-password`,
-        {
-          oldPassword: formData.oldPassword,
-          newPassword: formData.newPassword,
-        },
-        { withCredentials: true }
-      );
-
+      const response = await axios.post(`${API_URL}/api/student/reset-password`,
+        { oldPassword: formData.oldPassword, newPassword: formData.newPassword },
+        { withCredentials: true });
       if (response.status === 200) {
         toast.success(response.data.message || "Password reset successfully!");
         setTimeout(() => navigate("/teacherlogin"), 2000);
       }
     } catch (error) {
-      if (error.response) {
-        if (error.response.status === 400 && error.response.data.message === "Session expired. Please log in again.") {
-          toast.error("Session expired. Redirecting to login...");
-          setTimeout(() => navigate("/student/login"), 2000);
-        } else {
-          toast.error(error.response.data.message || "An error occurred. Please try again.");
-        }
+      if (error.response?.status === 400 && error.response.data.message === "Session expired. Please log in again.") {
+        toast.error("Session expired. Redirecting to login...");
+        setTimeout(() => navigate("/student/login"), 2000);
       } else {
-        toast.error("Server error. Please try again later.");
+        toast.error(error.response?.data?.message || "Server error. Please try again later.");
       }
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col lg:flex-row">
-      <ToastContainer />
-
-      {/* Left Section */}
-      <div className="flex-1 p-6 lg:p-16 flex items-center">
-        <div className="max-w-xl mx-auto lg:mx-20 lg:mt-0 md:mt-20">
-          <h1 className="text-3xl lg:text-5xl font-semibold mb-4 text-center lg:text-left">
-            Revolutionize your
-            <span className="block text-blue-700 mt-2">attendance with AI</span>
-          </h1>
-          <p className="text-gray-600 mt-4 text-center lg:text-left text-md lg:text-base">
-            — accurate, effortless, and secure tracking.
-          </p>
-        </div>
+  const PasswordField = ({ label, field, placeholder }) => (
+    <div>
+      <label className="block text-sm font-semibold text-slate-800 mb-1.5">{label}</label>
+      <div className="relative">
+        <input type={show[field] ? "text" : "password"} value={formData[field]}
+          onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+          required placeholder={placeholder}
+          className="block w-full rounded-lg border border-slate-200 py-2.5 px-4 pr-11 text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all bg-slate-50 focus:bg-white outline-none" />
+        <button type="button" onClick={() => setShow(s => ({ ...s, [field]: !s[field] }))}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors">
+          {show[field] ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
       </div>
+    </div>
+  );
 
-      {/* Right Section */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-20">
-        <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6 lg:p-8">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">Reset Password</h2>
-            <p className="text-sm text-gray-600 mt-2">Enter your new password below.</p>
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-16">
+      <ToastContainer position="top-right" autoClose={3000} theme="colored" />
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl mb-4">
+            <Lock size={22} className="text-blue-700" />
           </div>
+          <h1 className="text-2xl font-bold text-slate-900 font-serif">Change Password</h1>
+          <p className="text-slate-500 mt-2 text-sm">Update your password to keep your account secure.</p>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Old Password</label>
-              <input
-                type="password"
-                value={formData.oldPassword}
-                onChange={(e) => setFormData({ ...formData, oldPassword: e.target.value })}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your old password"
-              />
-            </div>
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <PasswordField label="Current Password" field="old" placeholder="Your current password" />
+            <PasswordField label="New Password" field="new" placeholder="Minimum 8 characters" />
+            <PasswordField label="Confirm New Password" field="confirm" placeholder="Repeat your new password" />
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-              <input
-                type="password"
-                value={formData.newPassword}
-                onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your new password"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-              <input
-                type="password"
-                value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Confirm your new password"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={loading}
-            >
-              {loading ? "Resetting..." : "Reset Password"}
+            <button type="submit" disabled={loading}
+              className="w-full py-2.5 bg-blue-800 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all text-sm disabled:opacity-70 mt-2">
+              {loading ? "Updating..." : "Update Password"}
             </button>
-
-            <div className="text-center">
-              <button
-                type="button"
-                onClick={() => navigate("/student/login")}
-                className="text-sm text-blue-600 hover:text-blue-700 mt-4"
-              >
-                Back to Login
-              </button>
-            </div>
           </form>
+
+          <div className="mt-5 text-center">
+            <button onClick={() => navigate("/student/login")}
+              className="text-sm text-slate-500 hover:text-blue-600 transition-colors">
+              ← Back to Login
+            </button>
+          </div>
         </div>
       </div>
     </div>

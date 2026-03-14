@@ -1,20 +1,109 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-    background-color: #f6f9ff;
+:root {
+  --font-body: 'Inter', sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --color-primary: #1e40af;
+  --color-accent: #2563eb;
+  --color-surface: #f8fafc;
+  --color-card: #ffffff;
+  --color-sidebar: #0f172a;
 }
 
+body {
+  background-color: #f8fafc;
+  font-family: var(--font-body);
+  color: #0f172a;
+}
+
+.bg-page {
+  background-color: var(--color-surface);
+}
+
+.card {
+  background: var(--color-card);
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+}
+
+.card-hover {
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.card-hover:hover {
+  box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.08), 0 2px 6px -1px rgb(0 0 0 / 0.04);
+  transform: translateY(-1px);
+}
+
+.font-display {
+  font-family: var(--font-serif);
+}
+
+/* Digit OTP input boxes */
+.otp-box {
+  width: 48px;
+  height: 52px;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  border-radius: 8px;
+  border: 1.5px solid #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+
+.otp-box:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 0.15);
+  background: #ffffff;
+}
+
+.otp-box.filled {
+  background: #1e3a8a;
+  color: #ffffff;
+  border-color: #1e3a8a;
+}
+
+/* Status badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.badge-green { background: #dcfce7; color: #166534; }
+.badge-red { background: #fee2e2; color: #991b1b; }
+.badge-yellow { background: #fef9c3; color: #854d0e; }
+.badge-blue { background: #dbeafe; color: #1e40af; }
+.badge-gray { background: #f1f5f9; color: #475569; }
+
 .bgf {
-    background-color: #ffffff;
+  background-color: #ffffff;
 }
 
 .black {
-    color: black !important;
+  color: black !important;
 }
 
 .text-md {
-    font-family: sans-serif;
-    font-size: 17.5px;
+  font-family: var(--font-body);
+  font-size: 17.5px;
+}
+
+/* Custom sidebar breakpoint */
+@media (min-width: 1024px) {
+  .custom\:block { display: block; }
+  .custom\:flex { display: flex; }
+  .custom\:hidden { display: none; }
 }

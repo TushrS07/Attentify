@@ -2,45 +2,57 @@ import { FaGithub, FaLinkedin, FaEnvelope, FaPhoneAlt, FaMapMarkerAlt } from "re
 
 export default function Footer() {
   return (
-    <footer className="mt-4 bgf text-gray-700 shadow-inner px-10 py-16 ">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-16">
-        
-        {/* Brand Section */}
+    <footer className="bg-slate-900 text-slate-400 px-10 py-12 mt-4">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
+
+        {/* Brand */}
         <div>
-          <h1 className="text-2xl font-bold text-blue-700">Attentify</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            An AI-powered facial recognition attendance system designed for modern education institutions.
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xs shadow-lg">A</div>
+            <h1 className="text-lg font-bold text-white tracking-tight font-serif">Attentify</h1>
+          </div>
+          <p className="text-sm text-slate-500 leading-relaxed">
+            An AI-powered facial recognition attendance system designed for modern educational institutions.
           </p>
         </div>
 
-        {/* Contact Information */}
+        {/* Contact */}
         <div>
-          <h2 className="text-lg font-semibold text-blue-700 mb-2">Contact Us</h2>
+          <h2 className="text-sm font-semibold text-slate-300 mb-4 uppercase tracking-wider">Contact Us</h2>
           <ul className="space-y-3 text-sm">
-            <li className="flex items-center gap-2">
-              <FaMapMarkerAlt className="text-blue-600" />
-              123 EduTech Street, Delhi, India
+            <li className="flex items-center gap-3">
+              <FaMapMarkerAlt className="text-blue-500 flex-shrink-0" />
+              <span>123 EduTech Street, Delhi, India</span>
             </li>
-            <li className="flex items-center gap-2">
-              <FaPhoneAlt className="text-blue-600" />
-              +91 98765 43210
+            <li className="flex items-center gap-3">
+              <FaPhoneAlt className="text-blue-500 flex-shrink-0" />
+              <span>+91 98765 43210</span>
             </li>
-            <li className="flex items-center gap-2">
-              <FaEnvelope className="text-blue-600" />
-              support@attentify.com
+            <li className="flex items-center gap-3">
+              <FaEnvelope className="text-blue-500 flex-shrink-0" />
+              <span>support@attentify.com</span>
             </li>
           </ul>
         </div>
 
-        {/* Social Media */}
+        {/* Social */}
         <div>
-          <h2 className="text-lg font-semibold text-blue-700 mb-2">Connect With Us</h2>
-          <div className="flex space-x-4 text-xl text-gray-600">
-            <a href="mailto:support@attentify.com" className="hover:text-blue-600"><FaEnvelope /></a>
-            <a href="https://github.com/your-repo" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600"><FaGithub /></a>
-            <a href="https://linkedin.com/in/your-profile" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600"><FaLinkedin /></a>
+          <h2 className="text-sm font-semibold text-slate-300 mb-4 uppercase tracking-wider">Connect With Us</h2>
+          <div className="flex space-x-4 mb-4">
+            <a href="mailto:support@attentify.com"
+              className="w-9 h-9 bg-slate-800 hover:bg-blue-600 border border-slate-700 hover:border-blue-600 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200">
+              <FaEnvelope size={14} />
+            </a>
+            <a href="https://github.com/your-repo" target="_blank" rel="noopener noreferrer"
+              className="w-9 h-9 bg-slate-800 hover:bg-blue-600 border border-slate-700 hover:border-blue-600 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200">
+              <FaGithub size={14} />
+            </a>
+            <a href="https://linkedin.com/in/your-profile" target="_blank" rel="noopener noreferrer"
+              className="w-9 h-9 bg-slate-800 hover:bg-blue-600 border border-slate-700 hover:border-blue-600 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200">
+              <FaLinkedin size={14} />
+            </a>
           </div>
-          <p className="mt-4 text-sm text-gray-500">&copy; {new Date().getFullYear()} Attentify. All rights reserved.</p>
+          <p className="text-xs text-slate-600">&copy; {new Date().getFullYear()} Attentify. All rights reserved.</p>
         </div>
       </div>
     </footer>
