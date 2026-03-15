@@ -1,5 +1,9 @@
 // Regenerate OTP for email
 import Student from "../models/Student.js";
+
+// In-memory OTP resend cooldown (60 seconds per email/phone)
+const OTP_COOLDOWN_MS = 60 * 1000;
+const otpLastSent = new Map();
 import bcrypt from "bcryptjs";
 import generateOTP from "../services/otpService.js";
 import transporter from "../config/email.js";
@@ -117,6 +121,12 @@ export const regenerate_OTP_Mail = async (req, res) => {
       return res.status(400).json({ message: "Email not found in cookies" });
     }
 
+    const lastSent = otpLastSent.get(`email:${studentEmail}`);
+    if (lastSent && Date.now() - lastSent < OTP_COOLDOWN_MS) {
+      const waitSeconds = Math.ceil((OTP_COOLDOWN_MS - (Date.now() - lastSent)) / 1000);
+      return res.status(429).json({ message: `Please wait ${waitSeconds}s before requesting another OTP.` });
+    }
+
     const otpEmail = generateOTP();
 
     const result = await Student.updateOne({ email: studentEmail }, { otpEmail });
@@ -131,6 +141,7 @@ export const regenerate_OTP_Mail = async (req, res) => {
       text: `Your OTP is ${otpEmail}`,
     });
 
+    otpLastSent.set(`email:${studentEmail}`, Date.now());
     res.json({ message: "New OTP sent successfully to email." });
   } catch (error) {
     console.error("Error during OTP regeneration for email:", error);
@@ -147,6 +158,12 @@ export const regenerate_OTP_Phone = async (req, res) => {
       return res.status(400).json({ message: "Phone not found in cookies" });
     }
 
+    const lastSent = otpLastSent.get(`phone:${studentPhone}`);
+    if (lastSent && Date.now() - lastSent < OTP_COOLDOWN_MS) {
+      const waitSeconds = Math.ceil((OTP_COOLDOWN_MS - (Date.now() - lastSent)) / 1000);
+      return res.status(429).json({ message: `Please wait ${waitSeconds}s before requesting another OTP.` });
+    }
+
     const otpPhone = generateOTP();
 
     const result = await Student.updateOne({ phone: studentPhone }, { otpPhone });
@@ -160,6 +177,7 @@ export const regenerate_OTP_Phone = async (req, res) => {
       to: `+91${studentPhone}`,
     });
 
+    otpLastSent.set(`phone:${studentPhone}`, Date.now());
     res.json({ message: "New OTP sent successfully to phone." });
   } catch (error) {
     console.error("Error during OTP regeneration for phone:", error);

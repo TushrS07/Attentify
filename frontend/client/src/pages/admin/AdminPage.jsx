@@ -13,8 +13,11 @@ const AdminPage = () => {
     const [dragOver, setDragOver] = useState(false);
 
     const handleFileChange = (e) => {
-        setFile(e.target.files[0]);
-        setMessage("");
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) {
+            setFile(selectedFile);
+            setMessage("");
+        }
     };
 
     const handleDrop = (e) => {
@@ -28,7 +31,10 @@ const AdminPage = () => {
     };
 
     const handleUpload = async () => {
-        if (!file) { setMessage("Please select a file first."); return; }
+        if (!file) { 
+            setMessage("Please select a file first."); 
+            return; 
+        }
         setUploading(true);
         setMessage("");
         const formData = new FormData();
@@ -38,8 +44,14 @@ const AdminPage = () => {
                 headers: { "Content-Type": "multipart/form-data" },
             });
             setMessage(response.data.message);
-        } catch { setMessage("Error uploading file."); }
-        finally { setUploading(false); }
+            setFile(null);
+        } catch (error) { 
+            console.error("Upload error:", error);
+            setMessage(error.response?.data?.error || "Error uploading file."); 
+        }
+        finally { 
+            setUploading(false); 
+        }
     };
 
     return (
@@ -94,30 +106,32 @@ const AdminPage = () => {
                             className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-all cursor-pointer mb-6 ${
                                 dragOver ? "border-blue-400 bg-blue-50" : file ? "border-emerald-400 bg-emerald-50/50" : "border-slate-300 hover:border-blue-300 bg-slate-50 hover:bg-blue-50/30"
                             }`}>
-                            {file ? (
-                                <>
-                                    <CheckCircle className="text-emerald-500 mb-3" size={36} />
-                                    <p className="text-sm font-semibold text-emerald-700 mb-1">{file.name}</p>
-                                    <p className="text-xs text-slate-500">{(file.size / 1024).toFixed(1)} KB · Ready to upload</p>
-                                </>
-                            ) : (
-                                <>
-                                    <UploadCloud className="text-slate-400 mb-3" size={36} />
-                                    <p className="text-sm font-semibold text-slate-700 mb-1">Drag & drop or click to browse</p>
-                                    <p className="text-xs text-slate-400">Supports .xlsx and .xls files</p>
-                                </>
-                            )}
-                            <input type="file" accept=".xlsx, .xls" onChange={handleFileChange}
-                                className="absolute opacity-0 w-full h-full cursor-pointer" style={{ inset: 0 }} />
+                            <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer">
+                                {file ? (
+                                    <>
+                                        <CheckCircle className="text-emerald-500 mb-3" size={36} />
+                                        <p className="text-sm font-semibold text-emerald-700 mb-1">{file.name}</p>
+                                        <p className="text-xs text-slate-500">{(file.size / 1024).toFixed(1)} KB · Ready to upload</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <UploadCloud className="text-slate-400 mb-3" size={36} />
+                                        <p className="text-sm font-semibold text-slate-700 mb-1">Drag & drop or click to browse</p>
+                                        <p className="text-xs text-slate-400">Supports .xlsx and .xls files</p>
+                                    </>
+                                )}
+                                <input 
+                                    type="file" 
+                                    accept=".xlsx, .xls" 
+                                    onChange={handleFileChange}
+                                    className="hidden" 
+                                />
+                            </label>
                         </div>
 
-                        <label className="block mb-4">
-                            <span className="text-sm font-semibold text-slate-700 mb-1.5 block">Or select file</span>
-                            <input type="file" accept=".xlsx, .xls" onChange={handleFileChange}
-                                className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
-                        </label>
-
-                        <button onClick={handleUpload} disabled={uploading || !file}
+                        <button 
+                            onClick={handleUpload} 
+                            disabled={uploading || !file}
                             className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed">
                             {uploading ? "Uploading..." : "Upload & Generate Credentials"}
                         </button>

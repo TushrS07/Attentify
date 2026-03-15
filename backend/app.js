@@ -14,15 +14,19 @@ const app = express();
 app.use(helmet());
 
 // JSON parser and cookie parser
-app.use(express.json({limit:'50mb'}));
+app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
+
+const ALLOWED_ORIGINS = process.env.CORS_ALLOWED_ORIGINS
+  ? process.env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+  : ['http://localhost:5173', 'http://localhost:5174'];
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || origin.includes('vercel.app') || origin.includes('localhost')) {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
       callback(null, true);
     } else {
-      callback(null, false);
+      callback(new Error(`CORS: origin '${origin}' not allowed`), false);
     }
   },
   credentials: true
@@ -34,14 +38,5 @@ app.use("/api/student", studentRoutes);
 app.use("/api/teacher", teacherRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/attendance", attendanceRoutes);
-
-app.get('/test',(req,res)=> {
-  res.send("Welcome to the Attendance Management System API");
-})
-
-
-app.get('/test2',(req,res)=> {
-  res.send("Welcome to the ..................... Attendance Management System API");
-})
 
 export default app;

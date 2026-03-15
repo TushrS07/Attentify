@@ -223,6 +223,19 @@ def add_face():
                 "message": "Could not detect/encode face from provided image"
             }), 400
 
+        # Persist to MongoDB first — only update in-memory store on success
+        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+        try:
+            db = client[DB_NAME]
+            students_collection = db['students']
+            students_collection.update_one(
+                {'rollNumber': roll_number},
+                {'$set': {'faceEmbedding': embedding.tolist()}},
+                upsert=True
+            )
+        finally:
+            client.close()
+
         with face_data_lock:
             if roll_number in known_face_names:
                 idx = known_face_names.index(roll_number)
@@ -231,21 +244,6 @@ def add_face():
 
             known_face_encodings.append(embedding)
             known_face_names.append(roll_number)
-
-        # Persist to MongoDB
-        try:
-            client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-            db = client[DB_NAME]
-            students_collection = db['students']
-            students_collection.update_one(
-                {'rollNumber': roll_number},
-                {'$set': {'faceEmbedding': embedding.tolist()}},
-                upsert=True
-            )
-            client.close()
-        except Exception as db_error:
-            logger.error(f"Warning: Face added to memory but failed to save to MongoDB: {db_error}")
-            # Continue anyway - face is in memory
 
         logger.info(f"Added/updated face for rollNumber: {roll_number}")
         return jsonify({
