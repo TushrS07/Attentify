@@ -344,6 +344,8 @@ const Promotion = () => {
 const FeatureCard = ({ icon, title, desc, num }) => {
     return (
       <div className="p-8 rounded-lg bg-slate-50 border border-slate-200 hover:border-blue-300 transition-colors">
+        <div className="flex items-center justify-between mb-6">
+            <div className={`p-3 rounded-md bg-white border border-slate-200 text-blue-800 shadow-sm`}>
               {icon}
             </div>
             <div className="text-2xl font-bold text-slate-200 select-none font-serif">
