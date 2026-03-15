@@ -4,6 +4,7 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { API_URL } from "../../config/api";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -11,11 +12,13 @@ export default function Login() {
     password: "",
     rememberMe: false,
   });
-
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const response = await axios.post(
         `${API_URL}/api/student/user/login`,
@@ -49,107 +52,114 @@ export default function Login() {
       } else {
         toast.error("An unexpected error occurred.");
       }
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col lg:flex-row">
+    <div className="min-h-screen flex font-sans" style={{ background: "#f7f8fc" }}>
       <ToastContainer position="top-right" autoClose={2000} />
-      {/* Left Section */}
-      <div className="flex-1 p-6 lg:p-16 flex items-center ml-10">
-        <div className="max-w-xl mx-auto lg:mx-0">
-          <h1 className="text-3xl lg:text-5xl font-semibold mb-4 text-center lg:text-left">
-            Revolutionize your
-            <span className="block text-blue-700 mt-2">attendance with AI</span>
-          </h1>
-          <p className="text-gray-600 mt-4 text-center lg:text-left text-sm lg:text-base">
-            — accurate, effortless, and secure tracking.
-          </p>
+
+      {/* Left Panel */}
+      <div className="hidden lg:flex lg:w-5/12 xl:w-2/5 flex-col justify-between p-12 relative overflow-hidden"
+        style={{ background: "linear-gradient(135deg, #3b1e8a 0%, #6d4ed7 100%)" }}>
+        {/* Decorative dots */}
+        <div className="absolute inset-0 opacity-[0.08]"
+          style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
+        <div className="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-10 left-0 w-48 h-48 bg-[#6d4ed7] rounded-full blur-3xl opacity-40 pointer-events-none" />
+
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-14">
+            <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center font-bold text-white text-lg border border-white/30">A</div>
+            <span className="text-2xl font-bold text-white tracking-tight">Attentify</span>
+          </div>
+
+          <div className="max-w-sm">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/80 text-xs font-medium mb-6">
+              Student Portal
+            </div>
+            <h1 className="text-4xl xl:text-5xl font-bold text-white mb-5 leading-tight">
+              Access your academic dashboard
+            </h1>
+            <p className="text-white/70 leading-relaxed text-base font-light">
+              Secure AI-driven attendance tracking. Attentify provides a premium AI-powered management system for modern institutions.
+            </p>
+          </div>
+        </div>
+
+        <div className="relative z-10">
+          <p className="text-xs text-white/40 font-medium tracking-widest uppercase">© 2024 Attentify Inc. All rights reserved.</p>
         </div>
       </div>
 
-      {/* Right Section */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-20">
-        <div className="w-full max-w-md bg-white rounded-lg shadow-md p-6 lg:p-8">
-          <form onSubmit={handleSubmit} className="space-y-4 lg:space-y-6">
+      {/* Right Panel */}
+      <div className="flex flex-1 flex-col justify-center items-center px-6 sm:px-12 lg:px-16 xl:px-24 bg-white">
+        <div className="w-full max-w-sm">
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-2 justify-center mb-10">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm"
+              style={{ background: "linear-gradient(135deg, #3b1e8a 0%, #6d4ed7 100%)" }}>A</div>
+            <span className="text-2xl font-bold text-[#1a1535] tracking-tight">Attentify</span>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold tracking-tight text-[#1a1535]">Sign in to your account</h2>
+            <p className="mt-1.5 text-sm text-[#9b93be]">Welcome back! Please enter your details.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Email
-              </label>
+              <label htmlFor="email" className="block text-sm font-semibold text-[#1a1535] mb-1.5">Email address</label>
               <input
-                id="email"
-                type="email"
+                id="email" type="email" autoComplete="email" required
                 value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="student@institution.edu"
+                className="block w-full rounded-lg border border-[#ddd8f0] py-2.5 px-4 text-[#1a1535] text-sm placeholder:text-[#c4bcdf] focus:border-[#3b1e8a] focus:ring-2 focus:ring-[#3b1e8a]/20 transition-all bg-[#f7f8fc] focus:bg-white outline-none"
               />
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+              <label htmlFor="password" className="block text-sm font-semibold text-[#1a1535] mb-1.5">Password</label>
+              <div className="relative">
+                <input
+                  id="password" type={showPassword ? "text" : "password"} required
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="••••••••"
+                  className="block w-full rounded-lg border border-[#ddd8f0] py-2.5 px-4 pr-11 text-[#1a1535] text-sm placeholder:text-[#c4bcdf] focus:border-[#3b1e8a] focus:ring-2 focus:ring-[#3b1e8a]/20 transition-all bg-[#f7f8fc] focus:bg-white outline-none"
+                />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9b93be] hover:text-[#3b1e8a] transition-colors">
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  type="checkbox"
-                  checked={formData.rememberMe}
-                  onChange={(e) =>
-                    setFormData({ ...formData, rememberMe: e.target.checked })
-                  }
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label
-                  htmlFor="remember-me"
-                  className="ml-2 block text-sm text-gray-700"
-                >
-                  Remember me
-                </label>
-              </div>
-              <Link
-                to="/student/forgotpassword"
-                className="text-sm text-blue-600 hover:text-blue-700"
-              >
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" checked={formData.rememberMe}
+                  onChange={(e) => setFormData({ ...formData, rememberMe: e.target.checked })}
+                  className="w-4 h-4 rounded border-[#ddd8f0] cursor-pointer" />
+                <span className="text-sm text-[#4a4560]">Remember me</span>
+              </label>
+              <Link to="/student/forgotpassword" className="text-sm font-semibold text-[#3b1e8a] hover:text-[#2d1669] transition-colors">
                 Forgot password?
               </Link>
             </div>
 
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Sign in
+            <button type="submit" disabled={loading}
+              className="w-full py-2.5 px-4 text-white font-semibold rounded-lg shadow transition-all text-sm disabled:opacity-70 disabled:cursor-not-allowed"
+              style={{ background: "linear-gradient(135deg, #3b1e8a 0%, #6d4ed7 100%)" }}>
+              {loading ? "Signing in..." : "Sign in"}
             </button>
 
-            <p className="text-center text-sm text-gray-600">
+            <p className="text-center text-sm text-[#4a4560]">
               Don't have an account?{" "}
-              <button
-                type="button"
-                className="text-blue-600 hover:text-blue-700 font-medium"
-                onClick={() => navigate("/student/register")}
-              >
+              <button type="button" onClick={() => navigate("/student/register")}
+                className="text-[#3b1e8a] hover:text-[#2d1669] font-semibold transition-colors">
                 Register here
               </button>
             </p>
