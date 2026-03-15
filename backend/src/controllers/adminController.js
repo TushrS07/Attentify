@@ -64,6 +64,7 @@ export const generateCredentials = async (req, res) => {
         for (let i = 0; i < data.length; i++) {
             try {
                 const row = data[i];
+                console.log(`Processing row ${i + 1}:`, row);
                 
                 // Handle different column name variations
                 const email = row.Email || row.email || row.EMAIL;
@@ -71,8 +72,13 @@ export const generateCredentials = async (req, res) => {
                 const phone = row.Phone || row.phone || row.PHONE;
 
                 // Validate required fields
-                if (!email) {
-                    errors.push(`Row ${i + 1}: Missing email address`);
+                if (!email || String(email).trim() === '') {
+                    errors.push(`Row ${i + 1}: Missing or empty email address`);
+                    continue;
+                }
+                
+                if (!name || String(name).trim() === '') {
+                    errors.push(`Row ${i + 1}: Missing or empty name`);
                     continue;
                 }
 
@@ -87,9 +93,9 @@ export const generateCredentials = async (req, res) => {
                 const hashedPassword = await bcrypt.hash(password, 10);
 
                 const user = new User({ 
-                    email, 
-                    name: name || 'User', 
-                    phone: phone || '', 
+                    email: String(email).trim().toLowerCase(), 
+                    name: String(name).trim(), 
+                    phone: phone ? String(phone).trim() : '', 
                     password: hashedPassword 
                 });
                 
@@ -120,8 +126,10 @@ export const generateCredentials = async (req, res) => {
 
         if (errors.length > 0) {
             response.warnings = errors;
+            response.errorCount = errors.length;
         }
-
+        
+        console.log('Final response:', response);
         res.json(response);
     } catch (error) {
         console.error('Error in generateCredentials:', error);
