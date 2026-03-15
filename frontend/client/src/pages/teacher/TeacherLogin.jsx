@@ -20,16 +20,17 @@ export default function TeacherLogin() {
         { headers: { "Content-Type": "application/json" }, withCredentials: true }
       );
       if (response.status === 200) {
-        localStorage.setItem("token", response.data.token);
-        toast.success("Login successful!");
-        setTimeout(() => navigate("/teacher"), 1500);
+        if (response.data.firstTimeLogin) {
+          toast.warn("First-time login detected. Redirecting to password reset...");
+          setTimeout(() => navigate("/teacher/resetpassword"), 1500);
+        } else {
+          toast.success("Login successful!");
+          setTimeout(() => navigate("/teacher"), 1500);
+        }
       }
     } catch (error) {
       if (error.response) {
-        if (error.response.status === 403) {
-          toast.warn("First-time login detected. Redirecting to password reset...");
-          setTimeout(() => navigate("/teacher/resetpassword"), 2000);
-        } else if (error.response.status === 404) {
+        if (error.response.status === 404) {
           toast.error("Teacher not found. Please check your email.");
         } else if (error.response.status === 400) {
           toast.error("Invalid credentials. Please try again.");

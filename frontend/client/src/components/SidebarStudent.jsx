@@ -25,7 +25,7 @@ export function SidebarStudent() {
     try {
       await axios.post(API.LOGOUT, {}, { withCredentials: true });
       toast.success("You have successfully logged out!");
-      setTimeout(() => navigate("/student/login"), 2000);
+      navigate("/student/login");
     } catch (err) {
       console.error(err);
       toast.error("Failed to log out");
@@ -35,7 +35,7 @@ export function SidebarStudent() {
   const isActive = (href) => location.pathname === href;
 
   return (
-    <nav className="hidden custom:flex flex-col bg-white border-r border-[#e8e6f0] w-64 min-h-screen shadow-sm z-10">
+    <nav className="hidden custom:flex flex-col bg-white border-r border-[#e8e6f0] w-64 min-h-screen shadow-sm z-10 pt-14">
       <ToastContainer position="top-right" autoClose={2000} theme="colored" />
 
       {/* Logo */}

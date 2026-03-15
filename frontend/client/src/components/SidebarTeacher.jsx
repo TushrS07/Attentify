@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
+import { TEACHER_API as API } from "../config/api";
 import {
   LayoutDashboard, CalendarDays, ClipboardCheck, ClipboardEdit,
   FileSpreadsheet, Users, FileText, BookOpen, UserCircle,
@@ -41,18 +43,23 @@ export function Sidebar() {
     setOpenSubMenus((prev) => ({ ...prev, [label]: !prev[label] }));
   };
 
-  const handleLogout = (e) => {
+  const handleLogout = async (e) => {
     e.preventDefault();
-    localStorage.removeItem("token");
-    toast.success("You have successfully logged out!");
-    setTimeout(() => navigate("/teacher/login"), 1000);
+    try {
+      await axios.post(API.LOGOUT, {}, { withCredentials: true });
+      toast.success("You have successfully logged out!");
+      navigate("/teacher/login");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to log out");
+    }
   };
 
   const isActive = (href) => location.pathname === href;
   const isGroupActive = (subItems) => subItems?.some((s) => location.pathname === s.href);
 
   return (
-    <nav className="hidden custom:flex flex-col bg-white border-r border-[#e8e6f0] w-64 min-h-screen shadow-sm z-10">
+    <nav className="hidden custom:flex flex-col bg-white border-r border-[#e8e6f0] w-64 min-h-screen shadow-sm z-10 pt-14">
       <ToastContainer position="top-right" autoClose={2000} theme="colored" />
 
       {/* Logo */}

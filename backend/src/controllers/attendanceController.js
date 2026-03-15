@@ -1,5 +1,6 @@
 import Attendance from '../models/Attendance.js';
 import Student from '../models/Student.js';
+import Teacher from '../models/Teacher.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -53,6 +54,15 @@ export const recordAttendance = async (req, res) => {
     const { studentName, sectionId, subjectId, lectureSlot } = req.body;
     const teacherId = req.user.id; // From verifyToken middleware
     console.log(studentName, sectionId, subjectId, teacherId);
+
+    // Verify the teacher is authorized to record attendance for this section/subject
+    const teacher = await Teacher.findById(teacherId);
+    if (!teacher) {
+      return res.status(403).json({ message: 'Teacher not found' });
+    }
+    if (!teacher.groups.includes(sectionId) || !teacher.subjects.includes(subjectId)) {
+      return res.status(403).json({ message: 'You are not authorized to record attendance for this section or subject' });
+    }
 
     // Find student by name (rollNumber actually)
     const student = await Student.findOne({ rollNumber: studentName });

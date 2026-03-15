@@ -1,5 +1,29 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Component } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "sans-serif" }}>
+          <h2 style={{ color: "#3b1e8a" }}>Something went wrong.</h2>
+          <p style={{ color: "#666" }}>Please refresh the page or contact support.</p>
+          <button onClick={() => window.location.reload()} style={{ marginTop: 16, padding: "8px 20px", background: "#3b1e8a", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer" }}>
+            Reload
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ---- Student Pages ----
 import StudentRegister from "./pages/student/StudentRegister";
@@ -15,6 +39,7 @@ import StudentMedical from "./pages/student/StudentMedical";
 import StudentTimetable from "./pages/student/StudentTimeTable";
 import StudentProfile from "./pages/student/StudentProfile";
 import Home from "./pages/student/Home";
+import Promotion from "./pages/student/Promotion";
 
 // ---- Teacher Pages ----
 import TeacherDashboard from "./pages/teacher/Teacher";
@@ -40,7 +65,6 @@ import AdminVerificationPage from "./pages/admin/VerificationPage";
 
 // ---- Shared Components ----
 import NotFound from "./pages/student/NotFound";
-import MainLoader from "./pages/student/MainLoader";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -69,7 +93,7 @@ const Layout = ({ children }) => {
     "/register",
   ];
 
-  const isPublicRoute = publicRoutes.some((route) => path.includes(route)) || path === "/";
+  const isPublicRoute = publicRoutes.some((route) => path.includes(route)) || path === "/" || path === "/promotion";
 
   return (
     <>
@@ -85,19 +109,13 @@ const Layout = ({ children }) => {
 };
 
 const AppContent = () => {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setTimeout(() => setLoading(false), 2000);
-  }, []);
-
-  if (loading) return <MainLoader className="fade-out-loader" />;
-
   return (
+    <ErrorBoundary>
     <Layout>
       <Routes>
         {/* ================= STUDENT ROUTES ================= */}
         <Route path="/" element={<Home />} />
+        <Route path="/promotion" element={<Promotion />} />
         <Route path="/student/login" element={<StudentLogin />} />
         <Route path="/student/register" element={<StudentRegister />} />
         <Route path="/student/register2" element={<StudentRegister2 />} />
@@ -140,6 +158,7 @@ const AppContent = () => {
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>
+    </ErrorBoundary>
   );
 };
 

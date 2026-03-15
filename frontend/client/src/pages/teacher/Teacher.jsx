@@ -34,7 +34,7 @@ export default function Teacher() {
   return (
     <div className="flex">
       <Sidebar />
-      <div className="flex-1 min-h-screen bg-[#f7f8fc]">
+      <div className="flex-1 min-h-screen bg-[#f7f8fc] pt-14">
         <div className="max-w-7xl mx-auto px-6 md:px-10 py-10">
           {/* Greeting */}
           <div className="mb-8">

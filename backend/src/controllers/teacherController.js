@@ -17,7 +17,7 @@ export const loginTeacher = async (req, res) => {
         let teacher = await Teacher.findOne({ email });
 
         if (teacher) {
-            const isMatch = bcrypt.compare(password, teacher.password);
+            const isMatch = await bcrypt.compare(password, teacher.password);
             if (!isMatch) {
                 return res.status(400).json({ message: "Invalid email or password" });
             }
@@ -33,14 +33,16 @@ export const loginTeacher = async (req, res) => {
             });
 
             res.cookie("token", token, {
-                httpOnly: false,
+                httpOnly: true,
                 secure: process.env.NODE_ENV === "production",
+                sameSite: "strict",
                 maxAge: 24 * 60 * 60 * 1000, // 1 day
             });
 
             if (!teacher.loggedIn) {
-                return res.status(403).json({
+                return res.status(200).json({
                     message: "First-time login detected. Please reset your password.",
+                    firstTimeLogin: true,
                     token,
                 });
             }
@@ -56,7 +58,7 @@ export const loginTeacher = async (req, res) => {
             return res.status(404).json({ message: "Teacher not found" });
         }
 
-        const isMatch = bcrypt.compare(password, user.password);
+        const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: "Invalid email or password" });
         }
@@ -74,8 +76,9 @@ export const loginTeacher = async (req, res) => {
             maxAge: 24 * 60 * 60 * 1000, // 1 day
         });
 
-        return res.status(403).json({
+        return res.status(200).json({
             message: "First-time login detected. Please reset your password.",
+            firstTimeLogin: true,
             token,
         });
     } catch (error) {
