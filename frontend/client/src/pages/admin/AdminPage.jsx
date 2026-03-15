@@ -43,11 +43,20 @@ const AdminPage = () => {
             const response = await axios.post(API.GENERATE_CREDENTIALS, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
-            setMessage(response.data.message);
+            
+            const { message: msg, usersCreated, totalRows, warnings } = response.data;
+            let displayMessage = `${msg}. Successfully created ${usersCreated}/${totalRows} users.`;
+            
+            if (warnings && warnings.length > 0) {
+                displayMessage += ` ${warnings.length} row(s) had issues.`;
+            }
+            
+            setMessage(displayMessage);
             setFile(null);
         } catch (error) { 
             console.error("Upload error:", error);
-            setMessage(error.response?.data?.error || "Error uploading file."); 
+            const errorMsg = error.response?.data?.error || "Error uploading file.";
+            setMessage(errorMsg); 
         }
         finally { 
             setUploading(false); 

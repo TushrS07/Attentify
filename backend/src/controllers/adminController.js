@@ -37,36 +37,97 @@ const sendEmail = async (email, subject, text) => {
     await transporter.sendMail(mailOptions);
 };
 
-// export const generateCredentials = (upload.single('file'), async (req, res) => {
 export const generateCredentials = async (req, res) => {
     try {
-        const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
-        const sheetName = workbook.SheetNames[0];
-        const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-        let usersData = [];
-
-        for (const row of data) {
-            const { Email, Name, Phone } = row;
-            const password = generatePassword();
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            const user = new User({ email: Email, name: Name, phone: Phone, password: hashedPassword });
-            await user.save();
-            await sendEmail(Email, 'Your Account Credentials', `Email: ${Email}\nPassword: ${password}`);
-
-            usersData.push({ Email, Name, Phone, Password: password });
+        // Validate file exists
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
         }
 
-        // Save the generated credentials to an Excel file
-        const newWorkbook = xlsx.utils.book_new();
-        const newWorksheet = xlsx.utils.json_to_sheet(usersData);
-        xlsx.utils.book_append_sheet(newWorkbook, newWorksheet, "Users");
-        xlsx.writeFile(newWorkbook, "Generated_Credentials.xlsx");
+        // Read Excel file
+        const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        
+        if (!sheetName) {
+            return res.status(400).json({ error: 'Excel file is empty' });
+        }
 
-        res.json({ message: 'Users created and emails sent! Credentials saved in Generated_Credentials.xlsx' });
+        const data = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+        if (!data || data.length === 0) {
+            return res.status(400).json({ error: 'No data found in Excel file' });
+        }
+
+        let usersData = [];
+        let errors = [];
+
+        for (let i = 0; i < data.length; i++) {
+            try {
+                const row = data[i];
+                
+                // Handle different column name variations
+                const email = row.Email || row.email || row.EMAIL;
+                const name = row.Name || row.name || row.NAME;
+                const phone = row.Phone || row.phone || row.PHONE;
+
+                // Validate required fields
+                if (!email) {
+                    errors.push(`Row ${i + 1}: Missing email address`);
+                    continue;
+                }
+
+                // Check if user already exists
+                const existingUser = await User.findOne({ email });
+                if (existingUser) {
+                    errors.push(`Row ${i + 1}: User with email ${email} already exists`);
+                    continue;
+                }
+
+                const password = generatePassword();
+                const hashedPassword = await bcrypt.hash(password, 10);
+
+                const user = new User({ 
+                    email, 
+                    name: name || 'User', 
+                    phone: phone || '', 
+                    password: hashedPassword 
+                });
+                
+                await user.save();
+
+                // Send email but don't fail if it doesn't work
+                try {
+                    await sendEmail(email, 'Your Account Credentials', `Email: ${email}\nPassword: ${password}`);
+                } catch (emailError) {
+                    console.warn(`Warning: Failed to send email to ${email}:`, emailError.message);
+                    // Continue even if email fails
+                }
+
+                usersData.push({ Email: email, Name: name || 'User', Phone: phone || 'N/A', Password: password });
+            } catch (rowError) {
+                errors.push(`Row ${i + 1}: ${rowError.message}`);
+                console.error(`Error processing row ${i + 1}:`, rowError);
+            }
+        }
+
+        // Prepare response
+        const response = {
+            message: `Successfully created ${usersData.length} user(s)`,
+            usersCreated: usersData.length,
+            totalRows: data.length,
+            credentials: usersData
+        };
+
+        if (errors.length > 0) {
+            response.warnings = errors;
+        }
+
+        res.json(response);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        console.error('Error in generateCredentials:', error);
+        res.status(500).json({ 
+            error: error.message || 'Internal Server Error',
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 };
