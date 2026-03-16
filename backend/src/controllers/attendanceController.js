@@ -11,7 +11,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 export const startAttendanceSession = async (req, res) => {
   try {
     let { subjectId, sectionId, date, lectureSlot } = req.body;
-    const teacherId = req.teacherId; // From verifyToken middleware
+    const teacherId = req.user.id; // From verifyToken middleware
 
     // Validate required fields
     if (!subjectId || !sectionId || !lectureSlot) {

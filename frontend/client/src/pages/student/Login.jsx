@@ -21,14 +21,13 @@ export default function Login() {
     setLoading(true);
     try {
       const response = await axios.post(
-        `${API_URL}/api/student/user/login`,
+        `${API_URL}/api/student/login`,
         formData,
         { withCredentials: true }
       );
 
       if (response.status === 200) {
         toast.success("Login successful!");
-        localStorage.setItem("token", "student-authenticated");
         setTimeout(() => navigate("/student"), 1500);
       }
     } catch (error) {

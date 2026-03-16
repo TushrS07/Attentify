@@ -21,6 +21,8 @@ router.post("/reset-password", resetPassword);
 // 🔒 Protected Routes (Add verifyToken middleware when auth is implemented)
 router.use(verifyToken); // Enable this to protect all routes below
 
+router.post("/logout", logout);
+
 router.get("/subjects", getSubjects);
 
 

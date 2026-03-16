@@ -63,9 +63,9 @@ export default function HeaderTeacher() {
       </div>
 
       {/* Mobile menu */}
-      <div className={`fixed top-0 right-0 h-full w-72 bg-white shadow-2xl transform ${
+      <div className={`fixed top-14 right-0 h-[calc(100vh-56px)] w-72 bg-white shadow-2xl transform ${
         isOpen ? "translate-x-0" : "translate-x-full"
-      } transition-transform duration-300 ease-in-out taskbar overflow-y-auto border-l border-[#e8e6f0]`}>
+      } transition-transform duration-300 ease-in-out taskbar overflow-y-auto border-l border-[#e8e6f0] z-40`}>
         <div className="flex justify-between items-center p-4 border-b border-[#e8e6f0]" style={{ background: "linear-gradient(135deg, #3b1e8a 0%, #4e2aad 100%)" }}>
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 bg-white/20 rounded-md flex items-center justify-center text-white font-bold text-xs">A</div>
@@ -149,7 +149,7 @@ export default function HeaderTeacher() {
 
       {/* Backdrop */}
       {isOpen && (
-        <div className="fixed inset-0 bg-[#1a1535]/20 backdrop-blur-sm z-[-1] custom:hidden" onClick={() => setIsOpen(false)} />
+        <div className="fixed inset-0 bg-[#1a1535]/20 backdrop-blur-sm z-30 custom:hidden" onClick={() => setIsOpen(false)} />
       )}
     </header>
   );

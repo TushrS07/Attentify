@@ -35,7 +35,7 @@ export function SidebarStudent() {
   const isActive = (href) => location.pathname === href;
 
   return (
-    <nav className="hidden custom:flex flex-col bg-white border-r border-[#e8e6f0] w-64 min-h-screen shadow-sm z-10 pt-14">
+    <nav className="hidden custom:flex flex-col bg-white border-r border-[#e8e6f0] w-64 min-h-screen shadow-sm z-20 pt-14 fixed left-0 top-0 h-screen overflow-y-auto">
       <ToastContainer position="top-right" autoClose={2000} theme="colored" />
 
       {/* Logo */}

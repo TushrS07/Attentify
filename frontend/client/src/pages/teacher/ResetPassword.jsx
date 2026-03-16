@@ -18,12 +18,10 @@ export default function ResetPassword() {
     if (formData.newPassword.length < 8) { toast.error("Password must be at least 8 characters long."); setLoading(false); return; }
     if (formData.newPassword !== formData.confirmPassword) { toast.error("Passwords do not match."); setLoading(false); return; }
     try {
-      const token = localStorage.getItem("token");
       const response = await axios.post(API.RESET_PASSWORD,
         { oldPassword: formData.oldPassword, newPassword: formData.newPassword },
-        { withCredentials: true, headers: { Authorization: `Bearer ${token}` } });
+        { withCredentials: true });
       if (response.status === 200) {
-        localStorage.removeItem("token");
         toast.success(response.data.message || "Password reset successfully!");
         setTimeout(() => navigate("/teacher/login"), 2000);
       }
