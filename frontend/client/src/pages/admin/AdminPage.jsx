@@ -55,11 +55,24 @@ const AdminPage = () => {
             const response = await axios.post(API.GENERATE_CREDENTIALS, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
-            setMessage(response.data.message);
+            
+            const { message: msg, usersCreated, totalRows, warnings } = response.data;
+            let displayMessage = `✓ ${msg}`;
+            
+            if (usersCreated > 0) {
+                displayMessage += ` (${usersCreated}/${totalRows} rows processed successfully)`;
+            }
+            
+            if (warnings && warnings.length > 0) {
+                displayMessage += `\n\n⚠ Issues found:\n${warnings.join('\n')}`;
+            }
+            
+            setMessage(displayMessage);
             setFile(null);
         } catch (error) { 
             console.error("Upload error:", error);
-            setMessage(error.response?.data?.error || "Error uploading file."); 
+            const errorMsg = error.response?.data?.error || "Error uploading file.";
+            setMessage(`❌ ${errorMsg}`); 
         }
         finally { 
             setUploading(false); 
@@ -149,8 +162,8 @@ const AdminPage = () => {
                         </button>
 
                         {message && (
-                            <div className={`mt-5 p-4 rounded-lg border text-sm ${message.toLowerCase().includes("error") ? "bg-red-50 border-red-200 text-red-700" : "bg-emerald-50 border-emerald-200 text-emerald-700"}`}>
-                                <p className="font-semibold mb-0.5">Status</p>
+                            <div className={`mt-5 p-4 rounded-lg border text-sm whitespace-pre-wrap ${message.includes("❌") ? "bg-red-50 border-red-200 text-red-700" : "bg-emerald-50 border-emerald-200 text-emerald-700"}`}>
+                                <p className="font-semibold mb-2">Status</p>
                                 <p>{message}</p>
                             </div>
                         )}

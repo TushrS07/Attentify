@@ -32,7 +32,13 @@ app.use(cors({
   credentials: true
 }));
 //
-
+app.get("/test", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: Date.now()
+  });
+});
 // Routes
 app.use("/api/student", studentRoutes);
 app.use("/api/teacher", teacherRoutes);
