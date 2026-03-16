@@ -43,7 +43,7 @@ function EditAttendance() {
   return (
     <div className="flex">
       <Sidebar />
-      <div className="flex-1 min-h-screen bg-gray-50 mb-5">
+      <div className="flex-1 min-h-screen bg-gray-50 mb-5 ml-0 custom:ml-64">
         {/* ToastContainer inside the page */}
         <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick pauseOnFocusLoss draggable pauseOnHover theme="colored" />
 

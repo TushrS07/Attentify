@@ -57,7 +57,7 @@ export default function Student() {
   return (
     <div className="flex">
       <SidebarStudent />
-      <div className="flex-1 min-h-screen bg-[#f7f8fc] pt-14">
+      <div className="flex-1 min-h-screen bg-[#f7f8fc] pt-14 ml-0 custom:ml-64">
         <div className="max-w-7xl mx-auto px-6 md:px-10 py-10">
           {/* Welcome */}
           <div className="mb-8">

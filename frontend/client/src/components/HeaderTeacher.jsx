@@ -34,12 +34,20 @@ export default function HeaderTeacher() {
 
   useEffect(() => {
     const handleOutside = (e) => {
-      if (!e.target.closest(".taskbar") && !e.target.closest(".menu-button")) {
+      const taskbar = document.querySelector(".taskbar");
+      const menuButton = document.querySelector(".menu-button");
+      
+      if (taskbar && !taskbar.contains(e.target) && menuButton && !menuButton.contains(e.target)) {
         setIsOpen(false);
       }
     };
-    if (isOpen) document.addEventListener("click", handleOutside);
-    return () => document.removeEventListener("click", handleOutside);
+    
+    if (isOpen) {
+      // Use capturing phase to ensure proper event handling
+      document.addEventListener("click", handleOutside, true);
+    }
+    
+    return () => document.removeEventListener("click", handleOutside, true);
   }, [isOpen]);
 
   const toggleSub = (key) => setExpandedMenu(expandedMenu === key ? null : key);
@@ -149,7 +157,7 @@ export default function HeaderTeacher() {
 
       {/* Backdrop */}
       {isOpen && (
-        <div className="fixed inset-0 bg-[#1a1535]/20 backdrop-blur-sm z-30 custom:hidden" onClick={() => setIsOpen(false)} />
+        <div className="fixed inset-0 bg-[#1a1535]/20 backdrop-blur-sm z-30 custom:hidden pointer-events-auto" onClick={() => setIsOpen(false)} />
       )}
     </header>
   );

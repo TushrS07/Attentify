@@ -70,7 +70,7 @@ function Classes() {
   return (
     <div className="flex flex-col lg:flex-row">
       <Sidebar />
-      <div className="flex-1 min-h-screen bg-gray-50">
+      <div className="flex-1 min-h-screen bg-gray-50 ml-0 custom:ml-64">
         {/* ToastContainer inside page */}
         <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover theme="colored" />
 

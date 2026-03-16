@@ -123,7 +123,7 @@ export default function TeacherProfile() {
   return (
     <div className="flex">
       <Sidebar />
-      <div className="flex-1 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 mt-20">
+      <div className="flex-1 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 mt-20 ml-0 custom:ml-64">
         <ToastContainer
           position="top-right"
           autoClose={3000}

@@ -49,7 +49,7 @@ function TimeTable() {
   return (
     <div className="flex">
       <Sidebar />
-      <div className="flex-1 min-h-screen bg-gray-50  mb-5">
+      <div className="flex-1 min-h-screen bg-gray-50 mb-5 ml-0 custom:ml-64">
         {/* Greeting Section */}
         <div className="mx-auto mb-6 mt-20 max-w-7xl">
           <div className="pt-10 px-16 w-100 mx-4 h-52 rounded-lg bg-gradient-to-r from-indigo-500 via-purple-500 to-purple-600">

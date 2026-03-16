@@ -78,7 +78,7 @@ export default function StudentMedicalPage() {
   return (
     <div className="flex">
       <SidebarStudent />
-      <div className="flex-1 min-h-screen bg-gray-50 mb-5">
+      <div className="flex-1 min-h-screen bg-gray-50 mb-5 ml-0 custom:ml-64">
         {/* ToastContainer for displaying notifications */}
         <ToastContainer
           position="top-right"
