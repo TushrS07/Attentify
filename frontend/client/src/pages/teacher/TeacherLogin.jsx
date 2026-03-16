@@ -20,6 +20,9 @@ export default function TeacherLogin() {
         { headers: { "Content-Type": "application/json" }, withCredentials: true }
       );
       if (response.status === 200) {
+        if (response.data.token) {
+          localStorage.setItem("token", response.data.token);
+        }
         if (response.data.firstTimeLogin) {
           toast.warn("First-time login detected. Redirecting to password reset...");
           setTimeout(() => navigate("/teacher/resetpassword"), 1500);
