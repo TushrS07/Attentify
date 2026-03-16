@@ -571,3 +571,53 @@ export const saveImageUrl = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+// Reset Password for Students
+export const resetPassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+
+    // Try to get token from cookies or Authorization header
+    let token = req.cookies.token;
+
+    if (!token) {
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith("Bearer ")) {
+        token = authHeader.slice(7);
+      }
+    }
+
+    if (!token) {
+      console.log("No token found in cookies or Authorization header");
+      return res.status(401).json({ message: "Sign in again" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (jwtError) {
+      console.log("JWT verification failed:", jwtError.message);
+      return res.status(401).json({ message: "Token expired. Please sign in again." });
+    }
+    const email = decoded.email;
+
+    const student = await Student.findOne({ email });
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const isMatch = await bcrypt.compare(oldPassword, student.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Old password is incorrect" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    student.password = hashedPassword;
+    await student.save();
+
+    res.status(200).json({ message: "Password reset successful. You can now log in." });
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};

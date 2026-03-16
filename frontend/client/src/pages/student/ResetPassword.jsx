@@ -24,9 +24,13 @@ export default function ResetPassword() {
       setLoading(false); return;
     }
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.post(`${API_URL}/api/student/reset-password`,
         { oldPassword: formData.oldPassword, newPassword: formData.newPassword },
-        { withCredentials: true });
+        {
+          withCredentials: true,
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
       if (response.status === 200) {
         toast.success(response.data.message || "Password reset successfully!");
         setTimeout(() => navigate("/student/login"), 2000);
@@ -77,7 +81,7 @@ export default function ResetPassword() {
 
             <button type="submit" disabled={loading}
               className="w-full py-2.5 text-white font-semibold rounded-lg transition-all text-sm disabled:opacity-70 mt-2"
-              style={{ background: "linear-gradient(135deg, #3b1e8a 0%, #6d4ed7 100%)" }}
+              style={{ background: "linear-gradient(135deg, #3b1e8a 0%, #6d4ed7 100%)" }}>
               {loading ? "Updating..." : "Update Password"}
             </button>
           </form>

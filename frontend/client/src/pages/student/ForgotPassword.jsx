@@ -79,7 +79,7 @@ export default function ForgotPassword() {
 
             <button type="submit" disabled={loading}
               className="w-full py-2.5 text-white font-semibold rounded-lg transition-all text-sm disabled:opacity-70 disabled:cursor-not-allowed mt-2"
-              style={{ background: "linear-gradient(135deg, #3b1e8a 0%, #6d4ed7 100%)" }}
+              style={{ background: "linear-gradient(135deg, #3b1e8a 0%, #6d4ed7 100%)" }}>
               {loading ? "Updating..." : "Set New Password"}
             </button>
           </form>

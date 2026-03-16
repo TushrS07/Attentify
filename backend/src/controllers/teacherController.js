@@ -138,12 +138,28 @@ export const resetPassword = async (req, res) => {
     try {
         const { oldPassword, newPassword } = req.body;
 
-        const token = req.cookies.token;
+        // Try to get token from cookies or Authorization header
+        let token = req.cookies.token;
+
         if (!token) {
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith("Bearer ")) {
+                token = authHeader.slice(7);
+            }
+        }
+
+        if (!token) {
+            console.log("No token found in cookies or Authorization header");
             return res.status(401).json({ message: "Sign in again" });
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (jwtError) {
+            console.log("JWT verification failed:", jwtError.message);
+            return res.status(401).json({ message: "Token expired. Please sign in again." });
+        }
         const email = decoded.email;
 
         const user = await User.findOne({ email });
