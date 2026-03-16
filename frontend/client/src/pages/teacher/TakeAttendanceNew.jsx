@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-import Cookies from 'js-cookie'
 import { TEACHER_API as API } from '../../config/api'
 import { Sidebar } from '../../components/SidebarTeacher'
 import TeacherName from '../../components/ProfileNameTeacher'
@@ -20,13 +19,6 @@ const Attendance = () => {
   const [message, setMessage] = useState('')
   const [date, setDate] = useState('')
   const [lectureSlot, setLectureSlot] = useState('')
-
-  useEffect(() => {
-    const token = Cookies.get('token')
-    if (!token) {
-      navigate('/teacher/login')
-    }
-  }, [navigate])
 
   const startVideo = async () => {
     try {
@@ -47,13 +39,6 @@ const Attendance = () => {
     }
 
     try {
-      const token = Cookies.get('token')
-      if (!token) {
-        setMessage('You need to log in first')
-        navigate('/teacher/login')
-        return
-      }
-
       const response = await axios.post(
         API.START_SESSION,
         { subjectId, sectionId, date, lectureSlot },
@@ -117,13 +102,6 @@ const Attendance = () => {
           recognitionResponse.data.name !== 'UNKNOWN'
         ) {
           setRecognizedName(recognitionResponse.data.name)
-
-          const token = Cookies.get('token')
-          if (!token) {
-            setMessage('Authentication expired. Please login again.')
-            navigate('/teacher/login')
-            return
-          }
 
           const attendanceResponse = await axios.post(
             API.RECORD_ATTENDANCE,

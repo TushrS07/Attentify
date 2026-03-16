@@ -24,7 +24,7 @@ router.use(verifyToken); // Enable this to protect all routes below
 router.get("/subjects", getSubjects);
 
 
-router.get("/allstudents", verifyToken, studentList);
+router.get("/allstudents", studentList);
 
 router.get("/profile", getTeacherProfile);
 router.put("/profile", updateTeacherProfile);
