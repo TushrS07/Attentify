@@ -8,7 +8,7 @@ export default function Footer() {
         {/* Brand */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-7 h-7 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xs shadow-lg">A</div>
+            <div className="w-7 h-7 rounded-md flex items-center justify-center text-white font-bold text-xs shadow-lg" style={{ background: "linear-gradient(135deg, #3b1e8a 0%, #6d4ed7 100%)" }}>A</div>
             <h1 className="text-lg font-bold text-white tracking-tight font-serif">Attentify</h1>
           </div>
           <p className="text-sm text-slate-500 leading-relaxed">
@@ -21,15 +21,15 @@ export default function Footer() {
           <h2 className="text-sm font-semibold text-slate-300 mb-4 uppercase tracking-wider">Contact Us</h2>
           <ul className="space-y-3 text-sm">
             <li className="flex items-center gap-3">
-              <FaMapMarkerAlt className="text-blue-500 flex-shrink-0" />
+              <FaMapMarkerAlt className="text-[#6d4ed7] flex-shrink-0" />
               <span>123 EduTech Street, Delhi, India</span>
             </li>
             <li className="flex items-center gap-3">
-              <FaPhoneAlt className="text-blue-500 flex-shrink-0" />
+              <FaPhoneAlt className="text-[#6d4ed7] flex-shrink-0" />
               <span>+91 98765 43210</span>
             </li>
             <li className="flex items-center gap-3">
-              <FaEnvelope className="text-blue-500 flex-shrink-0" />
+              <FaEnvelope className="text-[#6d4ed7] flex-shrink-0" />
               <span>support@attentify.com</span>
             </li>
           </ul>
@@ -40,15 +40,15 @@ export default function Footer() {
           <h2 className="text-sm font-semibold text-slate-300 mb-4 uppercase tracking-wider">Connect With Us</h2>
           <div className="flex space-x-4 mb-4">
             <a href="mailto:support@attentify.com"
-              className="w-9 h-9 bg-slate-800 hover:bg-blue-600 border border-slate-700 hover:border-blue-600 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200">
+              className="w-9 h-9 bg-slate-800 hover:bg-[#3b1e8a] border border-slate-700 hover:border-[#3b1e8a] rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200">
               <FaEnvelope size={14} />
             </a>
-            <a href="https://github.com/your-repo" target="_blank" rel="noopener noreferrer"
-              className="w-9 h-9 bg-slate-800 hover:bg-blue-600 border border-slate-700 hover:border-blue-600 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200">
+            <a href="https://github.com/attentify" target="_blank" rel="noopener noreferrer"
+              className="w-9 h-9 bg-slate-800 hover:bg-[#3b1e8a] border border-slate-700 hover:border-[#3b1e8a] rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200">
               <FaGithub size={14} />
             </a>
-            <a href="https://linkedin.com/in/your-profile" target="_blank" rel="noopener noreferrer"
-              className="w-9 h-9 bg-slate-800 hover:bg-blue-600 border border-slate-700 hover:border-blue-600 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200">
+            <a href="https://linkedin.com/company/attentify" target="_blank" rel="noopener noreferrer"
+              className="w-9 h-9 bg-slate-800 hover:bg-[#3b1e8a] border border-slate-700 hover:border-[#3b1e8a] rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-all duration-200">
               <FaLinkedin size={14} />
             </a>
           </div>

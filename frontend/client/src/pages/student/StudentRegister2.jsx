@@ -54,7 +54,7 @@ export default function StudentRegister2() {
         toast.success(response.data.message + ", Redirecting...."); // Success toast
         // Show success toast and redirect after 2 seconds
         setTimeout(() => {
-          navigate("/StudentRegister2/Image");
+          navigate("/student/register2/image");
         }, 2000);
       } else {
         toast.error("Registration failed"); // Error toast

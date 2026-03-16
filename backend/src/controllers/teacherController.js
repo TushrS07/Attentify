@@ -138,12 +138,28 @@ export const resetPassword = async (req, res) => {
     try {
         const { oldPassword, newPassword } = req.body;
 
-        const token = req.cookies.token;
+        // Try to get token from cookies or Authorization header
+        let token = req.cookies.token;
+
         if (!token) {
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith("Bearer ")) {
+                token = authHeader.slice(7);
+            }
+        }
+
+        if (!token) {
+            console.log("No token found in cookies or Authorization header");
             return res.status(401).json({ message: "Sign in again" });
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch (jwtError) {
+            console.log("JWT verification failed:", jwtError.message);
+            return res.status(401).json({ message: "Token expired. Please sign in again." });
+        }
         const email = decoded.email;
 
         const user = await User.findOne({ email });
@@ -166,8 +182,8 @@ export const resetPassword = async (req, res) => {
 
         await newTeacher.save();
 
-        // Optionally delete user record to prevent re-use
-        // await User.deleteOne({ email });
+        // Delete user record to prevent re-login with old credentials
+        await User.deleteOne({ email });
 
         res.status(200).json({ message: "Password reset successful. You can now log in." });
     } catch (error) {

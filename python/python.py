@@ -178,7 +178,7 @@ def load_faces_from_database():
 def health_check():
     with face_data_lock:
         face_count = len(known_face_encodings)
-    return jsonify({"status": "healthy", "loaded_faces4678876768768": face_count})
+    return jsonify({"status": "healthy", "loaded_faces": face_count})
 
 
 @app.route('/sync-faces', methods=['POST'])

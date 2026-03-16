@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 import { Sidebar } from "../../components/SidebarTeacher";
 import TeacherName from "../../components/ProfileNameTeacher";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import * as XLSX from "xlsx";
+import { TEACHER_API as API } from "../../config/api";
 
 function StudentList() {
   const [students, setStudents] = useState([]);
@@ -28,7 +29,7 @@ function StudentList() {
     setLoading(true);
     try {
       // Replace with your actual API endpoint
-      const response = await axios.get(`http://localhost:5000/api/teacher/allstudents`, {
+      const response = await axios.get(API.ALL_STUDENTS, {
         params: { group: selectedGroup },
         withCredentials: true
       });

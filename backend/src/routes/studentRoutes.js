@@ -13,7 +13,8 @@ import {
   login,
   saveImageUrl,
   getAttendance,
-  uploadImage
+  uploadImage,
+  resetPassword
 } from "../controllers/studentController.js";
 
 import { verifyToken } from "../middlewares/authMiddleware.js";
@@ -27,6 +28,7 @@ const upload = multer({ dest: "uploads/" });
  */
 router.post("/register", registerStudent);
 router.post("/login", login);
+router.post("/reset-password", resetPassword);
 
 
 /**
