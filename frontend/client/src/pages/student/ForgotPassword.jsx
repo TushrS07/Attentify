@@ -36,56 +36,57 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-16">
+    <div className="min-h-screen bg-[#f7f8fc] flex items-center justify-center px-4 py-16">
       <ToastContainer position="top-right" autoClose={3000} theme="colored" />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl mb-4">
-            <KeyRound size={22} className="text-blue-700" />
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-[#f3f0ff] rounded-xl mb-4">
+            <KeyRound size={22} className="text-[#3b1e8a]" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 font-serif">Forgot Password?</h1>
-          <p className="text-slate-500 mt-2 text-sm">Enter a new password for your student account.</p>
+          <h1 className="text-2xl font-bold text-[#1a1535]">Forgot Password?</h1>
+          <p className="text-[#4a4560] mt-2 text-sm">Enter a new password for your student account.</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+        <div className="bg-white rounded-2xl border border-[#e8e6f0] shadow-sm p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-slate-800 mb-1.5">New Password</label>
+              <label className="block text-sm font-semibold text-[#1a1535] mb-1.5">New Password</label>
               <div className="relative">
                 <input type={show.new ? "text" : "password"} value={formData.newPassword}
                   onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                   required placeholder="Minimum 8 characters"
-                  className="block w-full rounded-lg border border-slate-200 py-2.5 px-4 pr-11 text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all bg-slate-50 focus:bg-white outline-none" />
+                  className="block w-full rounded-lg border border-[#e8e6f0] py-2.5 px-4 pr-11 text-[#1a1535] text-sm placeholder:text-[#9b93be] focus:ring-2 focus:ring-[#3b1e8a] focus:border-[#3b1e8a] transition-all bg-[#f7f8fc] focus:bg-white outline-none" />
                 <button type="button" onClick={() => setShow(s => ({ ...s, new: !s.new }))}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9b93be] hover:text-[#3b1e8a] transition-colors">
                   {show.new ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-800 mb-1.5">Confirm New Password</label>
+              <label className="block text-sm font-semibold text-[#1a1535] mb-1.5">Confirm New Password</label>
               <div className="relative">
                 <input type={show.confirm ? "text" : "password"} value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                   required placeholder="Repeat your new password"
-                  className="block w-full rounded-lg border border-slate-200 py-2.5 px-4 pr-11 text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all bg-slate-50 focus:bg-white outline-none" />
+                  className="block w-full rounded-lg border border-[#e8e6f0] py-2.5 px-4 pr-11 text-[#1a1535] text-sm placeholder:text-[#9b93be] focus:ring-2 focus:ring-[#3b1e8a] focus:border-[#3b1e8a] transition-all bg-[#f7f8fc] focus:bg-white outline-none" />
                 <button type="button" onClick={() => setShow(s => ({ ...s, confirm: !s.confirm }))}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors">
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9b93be] hover:text-[#3b1e8a] transition-colors">
                   {show.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
             <button type="submit" disabled={loading}
-              className="w-full py-2.5 bg-blue-800 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all text-sm disabled:opacity-70 disabled:cursor-not-allowed mt-2">
+              className="w-full py-2.5 text-white font-semibold rounded-lg transition-all text-sm disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+              style={{ background: "linear-gradient(135deg, #3b1e8a 0%, #6d4ed7 100%)" }}
               {loading ? "Updating..." : "Set New Password"}
             </button>
           </form>
 
           <div className="mt-5 text-center">
             <button onClick={() => navigate("/student/login")}
-              className="text-sm text-slate-500 hover:text-blue-600 transition-colors">
+              className="text-sm text-[#4a4560] hover:text-[#3b1e8a] transition-colors">
               ← Back to Login
             </button>
           </div>

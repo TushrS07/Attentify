@@ -29,7 +29,7 @@ export default function ResetPassword() {
         { withCredentials: true });
       if (response.status === 200) {
         toast.success(response.data.message || "Password reset successfully!");
-        setTimeout(() => navigate("/teacherlogin"), 2000);
+        setTimeout(() => navigate("/student/login"), 2000);
       }
     } catch (error) {
       if (error.response?.status === 400 && error.response.data.message === "Session expired. Please log in again.") {
@@ -43,14 +43,14 @@ export default function ResetPassword() {
 
   const PasswordField = ({ label, field, placeholder }) => (
     <div>
-      <label className="block text-sm font-semibold text-slate-800 mb-1.5">{label}</label>
+      <label className="block text-sm font-semibold text-[#1a1535] mb-1.5">{label}</label>
       <div className="relative">
         <input type={show[field] ? "text" : "password"} value={formData[field]}
           onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
           required placeholder={placeholder}
-          className="block w-full rounded-lg border border-slate-200 py-2.5 px-4 pr-11 text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition-all bg-slate-50 focus:bg-white outline-none" />
+          className="block w-full rounded-lg border border-[#e8e6f0] py-2.5 px-4 pr-11 text-[#1a1535] text-sm placeholder:text-[#9b93be] focus:ring-2 focus:ring-[#3b1e8a] focus:border-[#3b1e8a] transition-all bg-[#f7f8fc] focus:bg-white outline-none" />
         <button type="button" onClick={() => setShow(s => ({ ...s, [field]: !s[field] }))}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors">
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9b93be] hover:text-[#3b1e8a] transition-colors">
           {show[field] ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
       </div>
@@ -58,32 +58,33 @@ export default function ResetPassword() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-16">
+    <div className="min-h-screen bg-[#f7f8fc] flex items-center justify-center px-4 py-16">
       <ToastContainer position="top-right" autoClose={3000} theme="colored" />
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-xl mb-4">
-            <Lock size={22} className="text-blue-700" />
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-[#f3f0ff] rounded-xl mb-4">
+            <Lock size={22} className="text-[#3b1e8a]" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 font-serif">Change Password</h1>
-          <p className="text-slate-500 mt-2 text-sm">Update your password to keep your account secure.</p>
+          <h1 className="text-2xl font-bold text-[#1a1535]">Change Password</h1>
+          <p className="text-[#4a4560] mt-2 text-sm">Update your password to keep your account secure.</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
+        <div className="bg-white rounded-2xl border border-[#e8e6f0] shadow-sm p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <PasswordField label="Current Password" field="old" placeholder="Your current password" />
             <PasswordField label="New Password" field="new" placeholder="Minimum 8 characters" />
             <PasswordField label="Confirm New Password" field="confirm" placeholder="Repeat your new password" />
 
             <button type="submit" disabled={loading}
-              className="w-full py-2.5 bg-blue-800 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all text-sm disabled:opacity-70 mt-2">
+              className="w-full py-2.5 text-white font-semibold rounded-lg transition-all text-sm disabled:opacity-70 mt-2"
+              style={{ background: "linear-gradient(135deg, #3b1e8a 0%, #6d4ed7 100%)" }}
               {loading ? "Updating..." : "Update Password"}
             </button>
           </form>
 
           <div className="mt-5 text-center">
             <button onClick={() => navigate("/student/login")}
-              className="text-sm text-slate-500 hover:text-blue-600 transition-colors">
+              className="text-sm text-[#4a4560] hover:text-[#3b1e8a] transition-colors">
               ← Back to Login
             </button>
           </div>

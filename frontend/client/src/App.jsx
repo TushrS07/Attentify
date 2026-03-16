@@ -135,16 +135,16 @@ const AppContent = () => {
         <Route path="/teacher/forgotpassword" element={<TeacherForgotPassword />} />
         <Route path="/teacher/resetpassword" element={<TeacherResetPassword />} />
 
-        <Route path="/teacher" element={<ProtectedRoute><TeacherDashboard /></ProtectedRoute>} />
-        <Route path="/teacher/profile" element={<ProtectedRoute><TeacherProfile /></ProtectedRoute>} />
-        <Route path="/teacher/generatesheet" element={<ProtectedRoute><GenerateSheet /></ProtectedRoute>} />
-        <Route path="/teacher/timetable" element={<ProtectedRoute><TeacherTimeTable /></ProtectedRoute>} />
-        <Route path="/teacher/takeattendance" element={<ProtectedRoute><TakeAttendance /></ProtectedRoute>} />
-        <Route path="/teacher/newattendance" element={<ProtectedRoute><TakeAttendanceNew /></ProtectedRoute>} />
-        <Route path="/teacher/editattendance" element={<ProtectedRoute><EditAttendance /></ProtectedRoute>} />
-        <Route path="/teacher/classes" element={<ProtectedRoute><Classes /></ProtectedRoute>} />
-        <Route path="/teacher/medicalreport" element={<ProtectedRoute><MedicalReport /></ProtectedRoute>} />
-        <Route path="/teacher/studentlist" element={<ProtectedRoute><StudentList /></ProtectedRoute>} />
+        <Route path="/teacher" element={<ProtectedRoute role="teacher"><TeacherDashboard /></ProtectedRoute>} />
+        <Route path="/teacher/profile" element={<ProtectedRoute role="teacher"><TeacherProfile /></ProtectedRoute>} />
+        <Route path="/teacher/generatesheet" element={<ProtectedRoute role="teacher"><GenerateSheet /></ProtectedRoute>} />
+        <Route path="/teacher/timetable" element={<ProtectedRoute role="teacher"><TeacherTimeTable /></ProtectedRoute>} />
+        <Route path="/teacher/takeattendance" element={<ProtectedRoute role="teacher"><TakeAttendance /></ProtectedRoute>} />
+        <Route path="/teacher/newattendance" element={<ProtectedRoute role="teacher"><TakeAttendanceNew /></ProtectedRoute>} />
+        <Route path="/teacher/editattendance" element={<ProtectedRoute role="teacher"><EditAttendance /></ProtectedRoute>} />
+        <Route path="/teacher/classes" element={<ProtectedRoute role="teacher"><Classes /></ProtectedRoute>} />
+        <Route path="/teacher/medicalreport" element={<ProtectedRoute role="teacher"><MedicalReport /></ProtectedRoute>} />
+        <Route path="/teacher/studentlist" element={<ProtectedRoute role="teacher"><StudentList /></ProtectedRoute>} />
 
         {/* ================= ADMIN ROUTES ================= */}
         <Route path="/admin/login" element={<AdminLogin />} />
@@ -152,7 +152,7 @@ const AppContent = () => {
         <Route path="/admin/resetpassword" element={<AdminResetPassword />} />
         <Route path="/admin/verificationpage" element={<AdminVerificationPage />} />
         
-        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/admin" element={<ProtectedRoute role="admin"><AdminPage /></ProtectedRoute>} />
 
         {/* ================= FALLBACK ================= */}
         <Route path="*" element={<NotFound />} />

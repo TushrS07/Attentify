@@ -1,8 +1,8 @@
 import { useState } from "react";
 import axios from "axios";
-import { ADMIN_API as API } from "../../config/api";
-import { Link } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
+import { ADMIN_API as API, API_URL } from "../../config/api";
+import { Link, useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FileSpreadsheet, UploadCloud, LogOut, CheckCircle } from "lucide-react";
 
@@ -11,6 +11,18 @@ const AdminPage = () => {
     const [uploading, setUploading] = useState(false);
     const [message, setMessage] = useState("");
     const [dragOver, setDragOver] = useState(false);
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        try {
+            await axios.post(`${API_URL}/api/admin/logout`, {}, { withCredentials: true });
+            toast.success("Logged out successfully");
+            setTimeout(() => navigate("/admin/login"), 800);
+        } catch (err) {
+            document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            navigate("/admin/login");
+        }
+    };
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files?.[0];
@@ -78,11 +90,11 @@ const AdminPage = () => {
                     </li>
                 </ul>
                 <div className="px-3 pb-6 border-t border-slate-800 pt-4">
-                    <Link to="/admin/login">
+                    <button onClick={handleLogout} className="w-full">
                         <span className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-red-900/30 hover:text-red-400 transition-all text-sm font-medium group">
                             <LogOut size={16} className="text-slate-500 group-hover:text-red-400" />Logout
                         </span>
-                    </Link>
+                    </button>
                 </div>
             </nav>
 

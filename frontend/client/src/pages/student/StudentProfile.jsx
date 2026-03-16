@@ -119,7 +119,7 @@ export default function StudentProfile() {
         />
 
         <div className="mx-auto mb-6 max-w-7xl">
-          <div className="pt-10 px-6 md:px-16 mx-4 h-52 rounded-lg bg-gradient-to-r from-green-400 via-blue-500 to-indigo-500">
+          <div className="pt-10 px-6 md:px-16 mx-4 h-52 rounded-lg bg-gradient-to-r from-indigo-500 via-purple-500 to-purple-600">
             <h1 className="text-white text-3xl lg:text-5xl font-bold mb-2">
               Welcome, {profile.name || "Student"}!
             </h1>

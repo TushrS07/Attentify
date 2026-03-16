@@ -166,8 +166,8 @@ export const resetPassword = async (req, res) => {
 
         await newTeacher.save();
 
-        // Optionally delete user record to prevent re-use
-        // await User.deleteOne({ email });
+        // Delete user record to prevent re-login with old credentials
+        await User.deleteOne({ email });
 
         res.status(200).json({ message: "Password reset successful. You can now log in." });
     } catch (error) {

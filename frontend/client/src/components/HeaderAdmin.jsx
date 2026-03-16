@@ -1,10 +1,29 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, LayoutDashboard, FileUp, LogOut } from "lucide-react";
+import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { API_URL } from "../config/api";
 
 export default function HeaderAdmin() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = async (e) => {
+    e?.preventDefault();
+    setIsOpen(false);
+    try {
+      await axios.post(`${API_URL}/api/admin/logout`, {}, { withCredentials: true });
+      toast.success("Logged out successfully");
+      setTimeout(() => navigate("/admin/login"), 800);
+    } catch (err) {
+      // Even if logout endpoint doesn't exist yet, clear cookie client-side
+      document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      navigate("/admin/login");
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -26,6 +45,7 @@ export default function HeaderAdmin() {
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
       scrolled ? "bg-white/95 backdrop-blur-md shadow-md border-b border-[#e8e6f0]" : "bg-white shadow-sm border-b border-[#e8e6f0]"
     }`}>
+      <ToastContainer position="top-right" autoClose={2000} theme="colored" />
       <div className="container mx-auto px-4 h-14 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow"
@@ -66,10 +86,10 @@ export default function HeaderAdmin() {
           ))}
 
           <div className="border-t border-[#e8e6f0] pt-3 mt-3">
-            <Link to="/admin/login" onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors text-sm font-medium">
+            <button onClick={handleLogout}
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors text-sm font-medium">
               <LogOut size={16} /> Logout
-            </Link>
+            </button>
           </div>
         </nav>
       </div>
