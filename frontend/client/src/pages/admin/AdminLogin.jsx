@@ -1,134 +1,71 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { ADMIN_API as API } from "../../config/api";
-import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { I } from '../../components/Icons';
+import Field from '../../components/Field';
+import { toast } from '../../components/Toast';
+import { API_URL } from '../../config/api';
 
-export default function AdminLogin() {
-  const [formData, setFormData] = useState({ email: "", password: "", rememberMe: false });
-  const [showPassword, setShowPassword] = useState(false);
+const AdminLogin = () => {
   const navigate = useNavigate();
+  const [form, setForm] = useState({ email:'', password:'', rememberMe:false });
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const set = (k) => (e) => setForm({...form, [k]: e.target.type==='checkbox'?e.target.checked:e.target.value});
 
-  const handleSubmit = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
+    if (!form.email || !form.password) return toast.error('All fields required');
+    setLoading(true);
     try {
-      const response = await axios.post(API.LOGIN, formData, { withCredentials: true });
-      if (response.status === 200) {
-        toast.success(response.data.message || "Login successful!");
-        setTimeout(() => navigate("/admin"), 2000);
-      }
-    } catch (error) {
-      if (error.response) {
-        toast.error(error.response.data.message || "Invalid credentials. Please try again.");
-      } else {
-        toast.error("Server error. Please try again later.");
-      }
-    }
+      const res = await axios.post(`${API_URL}/api/admin/login`, form, { withCredentials:true });
+      toast.success(res.data.message || 'Login successful');
+      setTimeout(()=>navigate('/admin'),1500);
+    } catch (err) { toast.error(err.response?.data?.message || 'Login failed'); }
+    finally { setLoading(false); }
   };
 
   return (
-    <div className="min-h-screen flex font-sans text-slate-900 selection:bg-slate-200">
-      <ToastContainer position="top-right" autoClose={3000} theme="colored" />
-
-      {/* Left Panel */}
-      <div className="hidden lg:flex lg:w-5/12 xl:w-2/5 bg-slate-900 flex-col justify-between p-12 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-[0.06]"
-          style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
-        <div className="absolute -top-20 right-0 w-64 h-64 bg-slate-700 rounded-full blur-3xl opacity-30 pointer-events-none" />
-
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-14">
-            <div className="w-9 h-9 bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center font-bold text-white text-lg shadow-sm">A</div>
-            <span className="text-2xl font-bold text-white tracking-tight font-serif">Attentify</span>
-            <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700 uppercase tracking-widest">Admin</span>
-          </div>
-
-          <div className="max-w-sm">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800 border border-slate-700 text-slate-400 text-xs font-medium mb-6">
-              <ShieldCheck size={13} className="text-slate-500" /> Secure Operations Console
+    <div className="at-root" style={{height:'100%'}}>
+      <div className="at-auth">
+        <div className="at-auth-left admin">
+          <div className="at-auth-brand" style={{color:'#E6E8EE'}}><div className="at-logo" style={{background:'#E6E8EE', color:'var(--admin-slate)'}}>A</div> Attentify</div>
+          <div>
+            <div className="at-mono" style={{fontSize:10.5, letterSpacing:'0.15em', color:'#6366F1', marginBottom:12}}>◉ RESTRICTED ACCESS</div>
+            <div className="at-auth-quote" style={{color:'#E6E8EE'}}>Onboard a whole institution in <em>one upload.</em></div>
+            <div style={{marginTop:28, padding:14, border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, fontSize:11.5, color:'#8B93A7', maxWidth:360}}>
+              <b style={{color:'#C5CADB'}}>Admin consoles are monitored.</b> All actions are logged with IP, device, and timestamp.
             </div>
-            <h1 className="text-4xl xl:text-5xl font-bold text-white mb-5 leading-tight font-serif">
-              System Administration
-            </h1>
-            <p className="text-slate-400 leading-relaxed text-base font-light">
-              Securely access the central management console to configure settings, manage credentials, and oversee platform operations.
-            </p>
           </div>
+          <div style={{fontSize:11, color:'#6B738A', letterSpacing:'0.08em'}}>INSTITUTION ID · INST_0241 · PROD</div>
         </div>
-
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="h-1 w-1 bg-slate-700 rounded-full" />
-            <div className="h-1 w-1 bg-slate-700 rounded-full" />
-            <div className="h-1 w-8 bg-slate-500 rounded-full" />
-          </div>
-          <p className="text-xs text-slate-600 font-medium tracking-widest uppercase">Restricted Access</p>
-        </div>
-      </div>
-
-      {/* Right Panel */}
-      <div className="flex flex-1 flex-col justify-center items-center px-6 sm:px-12 lg:px-16 xl:px-24 bg-white">
-        <div className="w-full max-w-sm">
-          <div className="lg:hidden flex items-center gap-2 justify-center mb-10">
-            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center font-bold text-white text-sm">A</div>
-            <span className="text-2xl font-bold text-slate-900 tracking-tight font-serif">Attentify</span>
-          </div>
-
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900 font-serif">Admin Authentication</h2>
-            <p className="mt-1.5 text-sm text-slate-500">Please authenticate to access the administration console.</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-slate-800 mb-1.5">Administrator Email</label>
-              <input
-                id="email" type="email" autoComplete="email" required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="admin@institution.edu"
-                className="block w-full rounded-lg border border-slate-200 py-2.5 px-4 text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-all bg-slate-50 focus:bg-white outline-none"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-slate-800 mb-1.5">Password</label>
-              <div className="relative">
-                <input
-                  id="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="••••••••"
-                  className="block w-full rounded-lg border border-slate-200 py-2.5 px-4 pr-11 text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-all bg-slate-50 focus:bg-white outline-none"
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors">
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
+        <div className="at-auth-right" style={{background:'#0B1220', color:'#E6E8EE'}}>
+          <form className="at-auth-card" onSubmit={submit}>
+            <div style={{display:'inline-flex', alignItems:'center', gap:6, padding:'3px 9px', border:'1px solid rgba(255,255,255,0.15)', borderRadius:999, fontSize:11, color:'#8B93A7', marginBottom:12}}><I.lock size={11}/> Admin only</div>
+            <div className="at-auth-title" style={{color:'#fff'}}>Administrator sign-in.</div>
+            <div className="at-auth-sub" style={{color:'#8B93A7'}}>Credential Generator & institutional controls.</div>
+            <div style={{display:'flex', flexDirection:'column', gap:14, marginTop:22}}>
+              <Field label="Email" required><input className="at-input" value={form.email} onChange={set('email')} placeholder="admin@institution.edu" style={{background:'#131B2E', borderColor:'#1F2A45', color:'#E6E8EE'}}/></Field>
+              <Field label="Password" required>
+                <div className="at-input-wrap">
+                  <input className="at-input" type={showPw?'text':'password'} value={form.password} onChange={set('password')} style={{background:'#131B2E', borderColor:'#1F2A45', color:'#E6E8EE'}}/>
+                  <span className="icon" onClick={()=>setShowPw(!showPw)}>{showPw?<I.eyeOff size={14} style={{color:'#8B93A7'}}/>:<I.eye size={14} style={{color:'#8B93A7'}}/>}</span>
+                </div>
+              </Field>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', color:'#8B93A7'}}>
+                <label className="at-checkbox" style={{color:'#8B93A7'}}><input type="checkbox" checked={form.rememberMe} onChange={set('rememberMe')}/> Remember me</label>
+                <Link to="/admin/forgotpassword" style={{fontSize:12, color:'#6366F1'}}>Forgot password?</Link>
               </div>
+              <button className="at-btn lg block" type="submit" disabled={loading} style={{background:'#6366F1', borderColor:'#6366F1', marginTop:4}}>
+                <I.shield size={13}/> {loading ? 'Signing in...' : 'Admin sign in'}
+              </button>
             </div>
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input type="checkbox" checked={formData.rememberMe}
-                  onChange={(e) => setFormData({ ...formData, rememberMe: e.target.checked })}
-                  className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-800 cursor-pointer" />
-                <span className="text-sm text-slate-600">Remember me</span>
-              </label>
-              <Link to="/admin/forgotpassword" className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
-                Forgot password?
-              </Link>
-            </div>
-
-            <button type="submit"
-              className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg shadow-sm transition-all text-sm">
-              Authenticate
-            </button>
+            <div style={{fontSize:11, color:'#6B738A', marginTop:18, textAlign:'center'}}>Not an admin? <Link to="/student/login" style={{color:'#8B93A7'}}>Go to student sign-in</Link></div>
           </form>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default AdminLogin;

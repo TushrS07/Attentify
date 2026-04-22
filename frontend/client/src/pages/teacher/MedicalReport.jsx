@@ -1,140 +1,67 @@
-import { useState } from "react";
-import { Sidebar } from "../../components/SidebarTeacher"; // Ensure this exists
-import TeacherName from "../../components/ProfileNameTeacher";
-import { toast, ToastContainer } from "react-toastify"; // Import Toastify
-import "react-toastify/dist/ReactToastify.css"; // Import Toastify styles
+import React, { useState } from 'react';
+import { I } from '../../components/Icons';
+import { toast } from '../../components/Toast';
 
-const dummyMedicalData = [
-  {
-    id: 1,
-    name: "John Doe",
-    group: "3",
-    from: "2024-02-01",
-    to: "2024-02-05",
-    mentor: "Dr. Smith",
-    proof: "medical_proof_1.pdf",
-    status: "pending",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    group: "5",
-    from: "2024-01-15",
-    to: "2024-01-20",
-    mentor: "Dr. Brown",
-    proof: "medical_proof_2.pdf",
-    status: "approved",
-  },
-  {
-    id: 3,
-    name: "Michael Lee",
-    group: "2",
-    from: "2024-01-10",
-    to: "2024-01-14",
-    mentor: "Dr. Adams",
-    proof: "medical_proof_3.pdf",
-    status: "pending",
-  },
+const mockLeaves = [
+  { id:1, name:'Priya Sharma', roll:'21CSE047', group:'04', dates:'18–20 Apr', days:3, reason:'Viral fever', status:'pending', file:'proof_21cse047.pdf' },
+  { id:2, name:'Arjun Mehta', roll:'21CSE048', group:'04', dates:'19–21 Apr', days:3, reason:'Family emergency', status:'pending', file:'proof_21cse048.pdf' },
+  { id:3, name:'Nisha Patel', roll:'21CSE051', group:'04', dates:'20 Apr', days:1, reason:'Dental procedure', status:'pending', file:'proof_21cse051.pdf' },
+  { id:4, name:'Rohan Das', roll:'21CSE050', group:'04', dates:'22–23 Apr', days:2, reason:'Flu symptoms', status:'pending', file:'proof_21cse050.pdf' },
+  { id:5, name:'Kavya Rao', roll:'21CSE049', group:'04', dates:'10–11 Apr', days:2, reason:'Migraine', status:'approved' },
+  { id:6, name:'Vikram Shah', roll:'21CSE052', group:'04', dates:'05 Apr', days:1, reason:'Eye checkup', status:'rejected' },
 ];
 
-export default function MedicalLeavePage() {
-  const [userName] = useState("John Doe");  
-  const [activeTab, setActiveTab] = useState("pending");
+const MedicalReport = () => {
+  const [leaves, setLeaves] = useState(mockLeaves);
+  const [tab, setTab] = useState('pending');
 
-  const filteredData = dummyMedicalData.filter((item) => item.status === activeTab);
-
-  const handleApprove = (id) => {
-    // Update the status to "approved" for the selected leave request
-    toast.success(`Medical leave approved for ID: ${id}`);
+  const act = (id, status) => {
+    setLeaves(leaves.map(l => l.id===id ? {...l, status} : l));
+    toast.success(`Leave ${status}`);
   };
 
-  const handleReject = (id) => {
-    // Update the status to "rejected" for the selected leave request
-    toast.error(`Medical leave rejected for ID: ${id}`);
-  };
+  const pending = leaves.filter(l=>l.status==='pending');
+  const approved = leaves.filter(l=>l.status==='approved');
+  const rejected = leaves.filter(l=>l.status==='rejected');
+  const filtered = tab==='pending'?pending : tab==='approved'?approved : rejected;
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="flex-1 min-h-screen bg-gray-50 mb-5 ml-0 custom:ml-64">
-        {/* ToastContainer */}
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="colored"
-        />
-
-        {/* Greeting Section */}
-        <div className="mx-auto mb-6 mt-20 max-w-7xl">
-          <div className="pt-10 px-16 w-100 mx-4 h-52 rounded-lg bg-gradient-to-r from-indigo-500 via-purple-500 to-purple-600">
-            <h1 className="text-white text-3xl lg:text-5xl font-bold mb-2">
-              Welcome back, <TeacherName/>!
-            </h1>
-            <p className="text-white text-sm lg:text-base">
-              Smart health monitoring powered by Attendify — keeping students and teachers informed. 
-            </p>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4">
-            {/* Tabs */}
-          <div className="mt-6 flex justify-evenly border-b">
-            {["pending", "approved", "rejected"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 text-lg font-semibold ${
-                  activeTab === tab ? "border-b-4 border-indigo-500 text-indigo-600" : "text-gray-500"
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </div>
-
-            {/* Cards Section */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredData.length > 0 ? (
-              filteredData.map((item) => (
-                <div key={item.id} className="p-4 bg-white rounded-lg shadow-md">
-                  <h2 className="text-lg font-semibold">Name : {item.name}</h2>
-                  <p className="text-md text-gray-600">Group: {item.group}</p>
-                  <p className="text-md text-gray-600">Date: {item.from} - {item.to}</p>
-                  <p className="text-md text-gray-600">Mentor: {item.mentor}</p>
-                  <p className="text-md text-gray-600">
-                    Proof: <a href="#" className="text-blue-500 underline">{item.proof}</a>
-                  </p>
-                  {activeTab === "pending" && (
-                    <div className="flex justify-end gap-2 mt-4">
-                      <button
-                        onClick={() => handleReject(item.id)}
-                        className="px-4 py-2 bg-red-500 text-white rounded-md"
-                      >
-                        Reject
-                      </button>
-                      <button
-                        onClick={() => handleApprove(item.id)}
-                        className="px-4 py-2 bg-green-500 text-white rounded-md"
-                      >
-                        Approve
-                      </button>
-                    </div>
-                  )}
+    <>
+      <div className="at-tabs" style={{marginBottom:16}}>
+        {[['pending','Pending',pending.length],['approved','Approved',approved.length],['rejected','Rejected',rejected.length]].map(([k,l,c])=>(
+          <div key={k} className={`at-tab ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l} <span className="count">{c}</span></div>
+        ))}
+      </div>
+      <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(320px, 1fr))', gap:12}}>
+        {filtered.map(l => (
+          <div key={l.id} className="at-card">
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10}}>
+              <div style={{display:'flex', gap:10, alignItems:'center'}}>
+                <div style={{width:34, height:34, borderRadius:'50%', background:'var(--indigo-50)', color:'var(--indigo-700)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:500}}>{l.name.split(' ').map(x=>x[0]).join('')}</div>
+                <div>
+                  <div style={{fontSize:13, fontWeight:500}}>{l.name}</div>
+                  <div style={{fontSize:11, color:'var(--ink-3)'}}>Roll {l.roll} · Group {l.group}</div>
                 </div>
-              ))
-            ) : (
-              <p className="text-gray-500 font-semibold">No records found...</p>
+              </div>
+              <span className={`at-badge ${l.status}`}>{l.status}</span>
+            </div>
+            <div style={{fontSize:12.5, color:'var(--ink-2)', padding:'10px 0', borderTop:'1px solid var(--line)', borderBottom:'1px solid var(--line)'}}>
+              <div style={{display:'flex', gap:16, marginBottom:6}}><span style={{color:'var(--ink-3)', width:60}}>Dates</span><span>{l.dates} · {l.days} day{l.days>1?'s':''}</span></div>
+              <div style={{display:'flex', gap:16, marginBottom:6}}><span style={{color:'var(--ink-3)', width:60}}>Reason</span><span>{l.reason}</span></div>
+              {l.file && <div style={{display:'flex', gap:16}}><span style={{color:'var(--ink-3)', width:60}}>Proof</span><a style={{color:'var(--indigo-700)', display:'inline-flex', alignItems:'center', gap:4}}><I.file size={11}/> {l.file}</a></div>}
+            </div>
+            {l.status === 'pending' && (
+              <div style={{display:'flex', gap:8, marginTop:10}}>
+                <button className="at-btn danger sm block" onClick={()=>act(l.id,'rejected')}><I.x size={11}/> Reject</button>
+                <button className="at-btn success sm block" onClick={()=>act(l.id,'approved')} style={{background:'var(--ok)', borderColor:'var(--ok)'}}><I.check size={11}/> Approve</button>
+              </div>
             )}
           </div>
-
-        </div>
+        ))}
+        {filtered.length === 0 && <div style={{color:'var(--ink-3)', fontSize:13, padding:20}}>No {tab} leaves.</div>}
       </div>
-    </div>
+    </>
   );
-}
+};
+
+export default MedicalReport;

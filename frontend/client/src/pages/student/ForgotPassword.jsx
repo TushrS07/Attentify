@@ -1,97 +1,80 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { API_URL } from "../../config/api";
-import { KeyRound, Eye, EyeOff } from "lucide-react";
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { I } from '../../components/Icons';
+import Field from '../../components/Field';
+import { toast } from '../../components/Toast';
+import { API_URL } from '../../config/api';
 
-export default function ForgotPassword() {
-  const [formData, setFormData] = useState({ newPassword: "", confirmPassword: "" });
-  const [loading, setLoading] = useState(false);
-  const [show, setShow] = useState({ new: false, confirm: false });
+const StudentForgotPassword = () => {
   const navigate = useNavigate();
+  const [form, setForm] = useState({ newPassword: '', confirmPassword: '' });
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+
+  const strength = () => {
+    const p = form.newPassword;
+    let s = 0;
+    if (p.length >= 8) s++;
+    if (/[A-Z]/.test(p)) s++;
+    if (/[0-9]/.test(p)) s++;
+    if (/[^A-Za-z0-9]/.test(p)) s++;
+    return s;
+  };
+
+  const submit = async (e) => {
     e.preventDefault();
+    if (!form.newPassword || form.newPassword.length < 8) return toast.error('Password must be at least 8 characters');
+    if (form.newPassword !== form.confirmPassword) return toast.error('Passwords do not match');
     setLoading(true);
-    if (formData.newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters long.");
-      setLoading(false); return;
-    }
-    if (formData.newPassword !== formData.confirmPassword) {
-      toast.error("Passwords do not match.");
-      setLoading(false); return;
-    }
     try {
-      const response = await axios.post(`${API_URL}/api/student/forgot-password`,
-        { newPassword: formData.newPassword }, { withCredentials: true });
-      if (response.status === 200) {
-        toast.success(response.data.message || "Password updated successfully!");
-        setTimeout(() => navigate("/student/login"), 2000);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Server error. Please try again later.");
+      await axios.post(`${API_URL}/api/student/forgot-password`, { newPassword: form.newPassword }, { withCredentials: true });
+      toast.success('Password updated!');
+      setTimeout(() => navigate('/student/login'), 1500);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to reset password');
     } finally { setLoading(false); }
   };
 
+  const s = strength();
+  const labels = ['Weak', 'Fair', 'Strong', 'Excellent'];
+
   return (
-    <div className="min-h-screen bg-[#f7f8fc] flex items-center justify-center px-4 py-16">
-      <ToastContainer position="top-right" autoClose={3000} theme="colored" />
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-[#f3f0ff] rounded-xl mb-4">
-            <KeyRound size={22} className="text-[#3b1e8a]" />
-          </div>
-          <h1 className="text-2xl font-bold text-[#1a1535]">Forgot Password?</h1>
-          <p className="text-[#4a4560] mt-2 text-sm">Enter a new password for your student account.</p>
+    <div className="at-root" style={{height:'100%'}}>
+      <div className="at-auth">
+        <div className="at-auth-left">
+          <div className="at-auth-brand"><div className="at-logo">A</div> Attentify</div>
+          <div className="at-auth-quote">Pick a new password. Make it something <em>only you'd guess.</em></div>
+          <div style={{fontSize:11, opacity:0.55}}>Session link valid for 15 minutes.</div>
         </div>
-
-        <div className="bg-white rounded-2xl border border-[#e8e6f0] shadow-sm p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-sm font-semibold text-[#1a1535] mb-1.5">New Password</label>
-              <div className="relative">
-                <input type={show.new ? "text" : "password"} value={formData.newPassword}
-                  onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                  required placeholder="Minimum 8 characters"
-                  className="block w-full rounded-lg border border-[#e8e6f0] py-2.5 px-4 pr-11 text-[#1a1535] text-sm placeholder:text-[#9b93be] focus:ring-2 focus:ring-[#3b1e8a] focus:border-[#3b1e8a] transition-all bg-[#f7f8fc] focus:bg-white outline-none" />
-                <button type="button" onClick={() => setShow(s => ({ ...s, new: !s.new }))}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9b93be] hover:text-[#3b1e8a] transition-colors">
-                  {show.new ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
+        <div className="at-auth-right">
+          <form className="at-auth-card" onSubmit={submit}>
+            <div className="at-auth-title">New password.</div>
+            <div className="at-auth-sub">Minimum 8 characters. Mix letters and numbers.</div>
+            <div style={{display:'flex', flexDirection:'column', gap:12, marginTop:22}}>
+              <Field label="New password" required><input className="at-input" type="password" value={form.newPassword} onChange={set('newPassword')} placeholder="Enter new password"/></Field>
+              <Field label="Confirm new password" required><input className="at-input" type="password" value={form.confirmPassword} onChange={set('confirmPassword')} placeholder="Re-enter password"/></Field>
+              {form.newPassword && (
+                <>
+                  <div style={{display:'flex', gap:4, marginTop:4}}>
+                    {[0,1,2,3].map(i => <div key={i} style={{flex:1, height:3, borderRadius:2, background: i < s ? 'var(--ok)' : 'var(--line)'}}/>)}
+                  </div>
+                  <div style={{fontSize:11, color:'var(--ink-3)'}}>{s > 0 ? labels[s-1] : 'Too short'} — {s} of 4 criteria met.</div>
+                </>
+              )}
             </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-[#1a1535] mb-1.5">Confirm New Password</label>
-              <div className="relative">
-                <input type={show.confirm ? "text" : "password"} value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  required placeholder="Repeat your new password"
-                  className="block w-full rounded-lg border border-[#e8e6f0] py-2.5 px-4 pr-11 text-[#1a1535] text-sm placeholder:text-[#9b93be] focus:ring-2 focus:ring-[#3b1e8a] focus:border-[#3b1e8a] transition-all bg-[#f7f8fc] focus:bg-white outline-none" />
-                <button type="button" onClick={() => setShow(s => ({ ...s, confirm: !s.confirm }))}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9b93be] hover:text-[#3b1e8a] transition-colors">
-                  {show.confirm ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-
-            <button type="submit" disabled={loading}
-              className="w-full py-2.5 text-white font-semibold rounded-lg transition-all text-sm disabled:opacity-70 disabled:cursor-not-allowed mt-2"
-              style={{ background: "linear-gradient(135deg, #3b1e8a 0%, #6d4ed7 100%)" }}>
-              {loading ? "Updating..." : "Set New Password"}
+            <button className="at-btn primary lg block" type="submit" disabled={loading} style={{marginTop:16}}>
+              {loading ? 'Setting...' : 'Set new password'}
             </button>
+            <Link to="/student/login" style={{display:'block', textAlign:'center', fontSize:12, color:'var(--ink-3)', marginTop:12}}>
+              <I.left size={11} style={{verticalAlign:-2}}/> Back to login
+            </Link>
           </form>
-
-          <div className="mt-5 text-center">
-            <button onClick={() => navigate("/student/login")}
-              className="text-sm text-[#4a4560] hover:text-[#3b1e8a] transition-colors">
-              ← Back to Login
-            </button>
-          </div>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default StudentForgotPassword;

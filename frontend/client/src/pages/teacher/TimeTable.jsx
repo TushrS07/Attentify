@@ -1,168 +1,58 @@
-"use client";
-import { useState } from "react";
-import { Sidebar } from "../../components/SidebarTeacher";
+import React, { useState } from 'react';
+import { I } from '../../components/Icons';
+import Field from '../../components/Field';
+import { toast } from '../../components/Toast';
 
-function TimeTable() {
-  const [userName] = useState("John");
-  const [timeTables, setTimeTables] = useState([
-    { id: 1, selectedGroup: "", uploadedFiles: [] },
+const TeacherTimetable = () => {
+  const [group, setGroup] = useState('');
+  const [timetables, setTimetables] = useState([
+    { id:1, group:'04', file:'timetable_g04_w14.pdf', updated:'2 days ago', current:true },
+    { id:2, group:'07', file:'timetable_g07_w14.xlsx', updated:'5 days ago', current:false },
+    { id:3, group:'12', file:'timetable_g12_w13.pdf', updated:'2 weeks ago', current:false },
   ]);
-  const [savedTimeTables, setSavedTimeTables] = useState([]);
-  const [previewFile, setPreviewFile] = useState(null);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [editingTable, setEditingTable] = useState(null);
-  const groups = Array.from({ length: 32 }, (_, i) => i + 1);
 
-  const handleFileUpload = (event, id) => {
-    const files = Array.from(event.target.files);
-    setTimeTables((prev) =>
-      prev.map((table) =>
-        table.id === id ? { ...table, uploadedFiles: files } : table
-      )
-    );
+  const addTimetable = () => {
+    if (!group) return toast.error('Select a group');
+    toast.success('Timetable added');
   };
 
-  const handlePreview = (file) => {
-    setPreviewFile(URL.createObjectURL(file));
-    setIsPreviewOpen(true);
-  };
-
-  const handleSaveTimeTable = (id) => {
-    const table = timeTables.find((t) => t.id === id);
-    if (table.selectedGroup && table.uploadedFiles.length > 0) {
-      setSavedTimeTables((prev) => [...prev, { ...table }]);
-      setTimeTables([{ id: 1, selectedGroup: "", uploadedFiles: [] }]);
-    } else {
-      alert("Please select a group and upload at least one file.");
-    }
-  };
-
-  const handleDeleteTimeTable = (index) => {
-    setSavedTimeTables((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleEditTimeTable = (index) => {
-    setEditingTable(index);
-    setTimeTables([{ ...savedTimeTables[index] }]);
+  const deleteTT = (id) => {
+    setTimetables(timetables.filter(t=>t.id!==id));
+    toast.success('Timetable removed');
   };
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="flex-1 min-h-screen bg-gray-50 mb-5 ml-0 custom:ml-64">
-        {/* Greeting Section */}
-        <div className="mx-auto mb-6 mt-20 max-w-7xl">
-          <div className="pt-10 px-16 w-100 mx-4 h-52 rounded-lg bg-gradient-to-r from-indigo-500 via-purple-500 to-purple-600">
-            <h1 className="text-white text-3xl lg:text-5xl font-bold mb-2">
-              Welcome back, {userName}!
-            </h1>
-            <p className="text-white text-sm lg:text-base">
-              Manage your classes below
-            </p>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4">
-          {timeTables.map((table) => (
-            <div key={table.id} className="bg-white p-6 rounded-lg shadow-sm mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Group</label>
-                  <select
-                    value={table.selectedGroup}
-                    onChange={(e) =>
-                      setTimeTables([{ ...table, selectedGroup: e.target.value }])
-                    }
-                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="" disabled>
-                      Select Group
-                    </option>
-                    {groups.map((group) => (
-                      <option key={group} value={group}>
-                        {group}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Upload Document</label>
-                  <input
-                    key={table.id + table.uploadedFiles.length} // Unique key to force re-render
-                    type="file"
-                    multiple
-                    onChange={(e) => handleFileUpload(e, table.id)}
-                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                    />
-                </div>
-                <button
-                  onClick={() => handleSaveTimeTable(table.id)}
-                  className="bg-blue-600 text-white py-2 px-4 rounded-md shadow hover:bg-blue-700 mt-6"
-                >
-                  Add Time Table
-                </button>
+    <>
+      <div className="at-card" style={{marginBottom:14}}>
+        <div style={{display:'grid', gridTemplateColumns:'220px 1fr auto', gap:14, alignItems:'end'}}>
+          <Field label="Group" required><input className="at-input" value={group} onChange={e=>setGroup(e.target.value)} placeholder="04"/></Field>
+          <Field label="Upload document" required>
+            <div className="at-drop" style={{padding:18, flexDirection:'row', justifyContent:'flex-start', gap:14}} onClick={()=>document.getElementById('tt-file').click()}>
+              <div className="icon"><I.upload size={16}/></div>
+              <div style={{textAlign:'left', flex:1}}>
+                <div style={{fontSize:12.5, color:'var(--ink)'}}>Drop .xlsx · .pdf · .png</div>
+                <div style={{fontSize:11, color:'var(--ink-4)'}}>or click to browse</div>
               </div>
-
-              {table.uploadedFiles.length > 0 && (
-                <ul className="mt-4">
-                  {table.uploadedFiles.map((file, index) => (
-                    <li key={index} className="flex justify-between bg-gray-100 p-2 rounded-md mb-2">
-                      <span className="text-gray-800">{file.name}</span>
-                      <button className="text-indigo-600 hover:underline" onClick={() => handlePreview(file)}>
-                        Preview
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </div>
-          ))}
-
-          {savedTimeTables.length > 0 && (
-            <div className="bg-white p-6 rounded-lg shadow-sm mt-6">
-              <h2 className="text-lg font-semibold mb-4">Saved Time Tables</h2>
-              <ul>
-                {savedTimeTables.map((table, index) => (
-                  <li
-                    key={index}
-                    className="p-2 bg-gray-100 rounded-md mb-2 flex justify-between cursor-pointer hover:bg-gray-200"
-                    onClick={() => handleEditTimeTable(index)}
-                  >
-                    <strong>Group {table.selectedGroup}:</strong>
-                    <span>{table.uploadedFiles.length} document(s) uploaded</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteTimeTable(index);
-                      }}
-                      className="ml-4 bg-red-600 text-white py-1 px-3 rounded-md shadow hover:bg-red-700"
-                    >
-                      Delete
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+            <input id="tt-file" type="file" style={{display:'none'}}/>
+          </Field>
+          <button className="at-btn primary" onClick={addTimetable}>Add timetable</button>
         </div>
       </div>
-
-      {isPreviewOpen && previewFile && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-4xl w-full">
-            <h3 className="text-lg font-semibold mb-4">Document Preview</h3>
-            <iframe src={previewFile} className="w-full h-[600px] border rounded-md"></iframe>
-            <button
-              onClick={() => setIsPreviewOpen(false)}
-              className="mt-4 w-full bg-red-600 text-white py-2 rounded-md shadow hover:bg-red-700"
-            >
-              Close Preview
-            </button>
+      <div className="at-card-title" style={{marginBottom:10}}>Saved timetables</div>
+      {timetables.map(t => (
+        <div key={t.id} className="at-card" style={{padding:'12px 16px', marginBottom:8, display:'flex', alignItems:'center', gap:12, flexWrap:'wrap'}}>
+          <div style={{width:36, height:44, borderRadius:4, background:'var(--paper-2)', border:'1px solid var(--line)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--ink-3)', flexShrink:0}}><I.file size={15}/></div>
+          <div style={{flex:1, minWidth:150}}>
+            <div style={{fontSize:13, fontWeight:500}}>Group {t.group} <span style={{fontFamily:'var(--ff-mono)', fontWeight:400, fontSize:11.5, color:'var(--ink-3)'}}>· {t.file}</span></div>
+            <div style={{fontSize:11.5, color:'var(--ink-3)'}}>{t.updated}</div>
           </div>
+          {t.current && <span className="at-pill">Current</span>}
+          <button className="at-btn ghost sm" style={{color:'var(--err)', borderColor:'#FCA5A5'}} onClick={()=>deleteTT(t.id)}><I.trash size={11}/></button>
         </div>
-      )}
-    </div>
+      ))}
+    </>
   );
-}
+};
 
-export default TimeTable;
+export default TeacherTimetable;

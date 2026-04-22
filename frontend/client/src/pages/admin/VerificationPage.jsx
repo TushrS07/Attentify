@@ -1,227 +1,121 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import Cookies from "js-cookie";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { ADMIN_API as API } from "../../config/api";
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { I } from '../../components/Icons';
+import { toast } from '../../components/Toast';
+import { API_URL } from '../../config/api';
 
-export default function VerificationPage() {
+const OTPInput = ({ digits, onChange, disabled, dark }) => {
+  const refs = useRef([]);
+  const handleChange = (i, val) => {
+    if (!/^\d?$/.test(val)) return;
+    const next = [...digits];
+    next[i] = val;
+    onChange(next);
+    if (val && i < 5) refs.current[i+1]?.focus();
+  };
+  const handleKey = (i, e) => {
+    if (e.key === 'Backspace' && !digits[i] && i > 0) refs.current[i-1]?.focus();
+  };
+  const style = dark ? { background:'#131B2E', borderColor:'#2D3B5F', color:'#E6E8EE' } : {};
+  return (
+    <div className="at-otp">
+      {digits.map((d, i) => (
+        <input key={i} ref={el => refs.current[i] = el} value={d} maxLength={1}
+          disabled={disabled} style={style}
+          onChange={e => handleChange(i, e.target.value)}
+          onKeyDown={e => handleKey(i, e)}/>
+      ))}
+    </div>
+  );
+};
+
+const AdminOTP = () => {
   const navigate = useNavigate();
-  const [smsOtp, setSmsOtp] = useState(["", "", "", "", "", ""]);
-  const [emailCode, setEmailCode] = useState(["", "", "", "", "", ""]);
-  const [smsTimer, setSmsTimer] = useState(30);
-  const [emailTimer, setEmailTimer] = useState(30);
-  const [isSmsVerified, setIsSmsVerified] = useState(false);
-  const [isEmailVerified, setIsEmailVerified] = useState(false);
-
-  const smsRefs = useRef([]);
-  const emailRefs = useRef([]);
+  const [emailOtp, setEmailOtp] = useState(['','','','','','']);
+  const [smsOtp, setSmsOtp] = useState(['','','','','','']);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [smsVerified, setSmsVerified] = useState(false);
+  const [emailTimer, setEmailTimer] = useState(60);
+  const [smsTimer, setSmsTimer] = useState(60);
 
   useEffect(() => {
-    let smsInterval;
-    if (smsTimer > 0) {
-      smsInterval = setInterval(() => {
-        setSmsTimer((prevTimer) => prevTimer - 1);
-      }, 1000);
-    }
-    return () => clearInterval(smsInterval);
-  }, [smsTimer]);
+    const t = setInterval(() => {
+      setEmailTimer(p => p > 0 ? p - 1 : 0);
+      setSmsTimer(p => p > 0 ? p - 1 : 0);
+    }, 1000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
-    let emailInterval;
-    if (emailTimer > 0) {
-      emailInterval = setInterval(() => {
-        setEmailTimer((prevTimer) => prevTimer - 1);
-      }, 1000);
+    if (emailVerified && smsVerified) {
+      toast.success('Verified! Redirecting...');
+      setTimeout(() => navigate('/admin'), 1500);
     }
-    return () => clearInterval(emailInterval);
-  }, [emailTimer]);
+  }, [emailVerified, smsVerified]);
 
-  const resendSmsOtp = async () => {
+  const verifyEmail = async () => {
+    const code = emailOtp.join('');
+    if (code.length < 6) return;
     try {
-      const email = Cookies.get("email");
-      const phone = Cookies.get("phone");
-      if (!email || !phone) {
-        toast.error("Email or phone not found in cookies");
-        return;
-      }
-      const response = await axios.post(API.SEND_OTP_PHONE, {}, { withCredentials: true });
-      if (response.data.message) {
-        toast.success(response.data.message);
-        setSmsTimer(30);
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to resend SMS OTP");
-    }
+      await axios.post(`${API_URL}/api/admin/verify-email-otp`, { emailOtp: code }, { withCredentials:true });
+      setEmailVerified(true);
+    } catch (err) { toast.error(err.response?.data?.message || 'Invalid code'); }
   };
 
-  const resendEmailOtp = async () => {
+  const verifySms = async () => {
+    const code = smsOtp.join('');
+    if (code.length < 6) return;
     try {
-      const email = Cookies.get("email");
-      if (!email) {
-        toast.error("Email not found in cookies");
-        return;
-      }
-      const response = await axios.post(API.SEND_OTP_EMAIL, {}, { withCredentials: true });
-      if (response.data.message) {
-        toast.success(response.data.message);
-        setEmailTimer(30);
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to resend email OTP");
-    }
+      await axios.post(`${API_URL}/api/admin/verify-phone-otp`, { phoneOtp: code }, { withCredentials:true });
+      setSmsVerified(true);
+    } catch (err) { toast.error(err.response?.data?.message || 'Invalid code'); }
   };
 
-  const verifySmsOtp = async () => {
-    try {
-      const phoneOtp = smsOtp.join("");
-      const response = await axios.post(API.VERIFY_PHONE_OTP, { phoneOtp }, { withCredentials: true });
-      if (response.data.message) {
-        toast.success(response.data.message);
-        setIsSmsVerified(true);
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to verify SMS OTP");
-    }
-  };
-
-  const verifyEmailOtp = async () => {
-    try {
-      const emailOtp = emailCode.join("");
-      const response = await axios.post(API.VERIFY_EMAIL_OTP, { emailOtp }, { withCredentials: true });
-      if (response.data.message) {
-        toast.success(response.data.message);
-        setIsEmailVerified(true);
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to verify Email OTP");
-    }
-  };
-
-  const handleOtpChange = (index, value, type) => {
-    if (!/^[0-9]?$/.test(value)) return;
-    if (type === "sms") {
-      const newOtp = [...smsOtp];
-      newOtp[index] = value;
-      setSmsOtp(newOtp);
-      if (value && index < smsOtp.length - 1) {
-        smsRefs.current[index + 1].focus();
-      }
-    } else {
-      const newCode = [...emailCode];
-      newCode[index] = value;
-      setEmailCode(newCode);
-      if (value && index < emailCode.length - 1) {
-        emailRefs.current[index + 1].focus();
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (isSmsVerified && isEmailVerified) {
-      toast.success("Verification successful!");
-      setTimeout(() => {
-        navigate("/admin");
-      }, 2000);
-    }
-  }, [isSmsVerified, isEmailVerified, navigate]);
+  useEffect(() => { if (emailOtp.every(d=>d) && !emailVerified) verifyEmail(); }, [emailOtp]);
+  useEffect(() => { if (smsOtp.every(d=>d) && !smsVerified) verifySms(); }, [smsOtp]);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-16">
-      <ToastContainer position="top-right" autoClose={3000} theme="colored" />
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-slate-900 rounded-xl mb-4">
-            <span className="text-white font-bold text-lg">A</span>
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900 font-serif">Verify Your Identity</h1>
-          <p className="text-slate-500 mt-2 text-sm">Enter the OTPs sent to your email and phone.</p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 space-y-6">
-          {/* Email OTP */}
+    <div className="at-root" style={{height:'100%'}}>
+      <div className="at-auth">
+        <div className="at-auth-left admin">
+          <div className="at-auth-brand" style={{color:'#E6E8EE'}}><div className="at-logo" style={{background:'#E6E8EE', color:'var(--admin-slate)'}}>A</div> Attentify</div>
           <div>
-            <div className="text-sm font-semibold text-slate-800 mb-2">Email OTP</div>
-            <p className="text-slate-500 text-xs mb-3">Enter the OTP sent to your email</p>
-            <div className="flex gap-2 mb-3">
-              {emailCode.map((digit, index) => (
-                <input
-                  key={index}
-                  type="text"
-                  maxLength="1"
-                  value={digit}
-                  onChange={(e) => handleOtpChange(index, e.target.value, "email")}
-                  ref={(el) => (emailRefs.current[index] = el)}
-                  className="w-10 h-10 border border-slate-200 rounded-lg text-center font-bold text-lg focus:ring-2 focus:ring-slate-800 focus:border-slate-800 outline-none transition-all bg-slate-50 focus:bg-white"
-                />
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <button
-                className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg transition-all hover:bg-slate-200 disabled:opacity-50"
-                onClick={resendEmailOtp}
-                disabled={emailTimer > 0}
-              >
-                {emailTimer > 0 ? `Resend (${emailTimer}s)` : "Resend OTP"}
-              </button>
-              <button
-                className={`px-4 py-2 text-sm font-medium rounded-lg text-white transition-all ${isEmailVerified ? "bg-emerald-500" : "bg-slate-900 hover:bg-slate-800"}`}
-                onClick={verifyEmailOtp}
-                disabled={isEmailVerified}
-              >
-                {isEmailVerified ? "Verified" : "Verify"}
-              </button>
-            </div>
+            <div className="at-mono" style={{fontSize:10.5, letterSpacing:'0.15em', color:'#6366F1', marginBottom:12}}>◉ 2-STEP VERIFICATION</div>
+            <div className="at-auth-quote" style={{color:'#E6E8EE'}}>Admin accounts require <em>both</em> codes. Always.</div>
           </div>
-
-          {/* SMS OTP */}
-          <div>
-            <div className="text-sm font-semibold text-slate-800 mb-2">SMS OTP</div>
-            <p className="text-slate-500 text-xs mb-3">Enter the OTP sent to your phone</p>
-            <div className="flex gap-2 mb-3">
-              {smsOtp.map((digit, index) => (
-                <input
-                  key={index}
-                  type="text"
-                  maxLength="1"
-                  value={digit}
-                  onChange={(e) => handleOtpChange(index, e.target.value, "sms")}
-                  ref={(el) => (smsRefs.current[index] = el)}
-                  className="w-10 h-10 border border-slate-200 rounded-lg text-center font-bold text-lg focus:ring-2 focus:ring-slate-800 focus:border-slate-800 outline-none transition-all bg-slate-50 focus:bg-white"
-                />
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <button
-                className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-lg transition-all hover:bg-slate-200 disabled:opacity-50"
-                onClick={resendSmsOtp}
-                disabled={smsTimer > 0}
-              >
-                {smsTimer > 0 ? `Resend (${smsTimer}s)` : "Resend OTP"}
-              </button>
-              <button
-                className={`px-4 py-2 text-sm font-medium rounded-lg text-white transition-all ${isSmsVerified ? "bg-emerald-500" : "bg-slate-900 hover:bg-slate-800"}`}
-                onClick={verifySmsOtp}
-                disabled={isSmsVerified}
-              >
-                {isSmsVerified ? "Verified" : "Verify"}
-              </button>
-            </div>
-          </div>
+          <div style={{fontSize:11, color:'#6B738A'}}>Codes expire in 10 minutes.</div>
         </div>
+        <div className="at-auth-right" style={{background:'#0B1220', color:'#E6E8EE'}}>
+          <div className="at-auth-card" style={{maxWidth:420}}>
+            <div className="at-auth-title" style={{color:'#fff'}}>Verify administrator.</div>
+            <div className="at-auth-sub" style={{color:'#8B93A7'}}>Codes sent to your email and phone.</div>
 
-        <div className="mt-5 text-center">
-          <button onClick={() => navigate("/admin/login")}
-            className="text-sm text-slate-500 hover:text-slate-800 transition-colors">
-            ← Back to Login
-          </button>
+            <div style={{marginTop:28, paddingBottom:20, borderBottom:'1px solid #1F2A45'}}>
+              <div style={{display:'flex', justifyContent:'space-between', marginBottom:10, fontSize:12}}>
+                <span style={{color:'#E6E8EE'}}><I.mail size={12} style={{verticalAlign:-2, marginRight:6}}/>Email code</span>
+                <span className="at-mono" style={{color:'#8B93A7'}}>{emailTimer>0?`Resend in ${emailTimer}s`:'Resend'}</span>
+              </div>
+              <OTPInput digits={emailOtp} onChange={setEmailOtp} disabled={emailVerified} dark/>
+              {emailVerified && <span className="at-badge approved" style={{marginTop:10, display:'inline-flex'}}><I.check size={11}/> Verified</span>}
+            </div>
+
+            <div style={{paddingTop:20}}>
+              <div style={{display:'flex', justifyContent:'space-between', marginBottom:10, fontSize:12}}>
+                <span style={{color:'#E6E8EE'}}><I.phone size={12} style={{verticalAlign:-2, marginRight:6}}/>SMS code</span>
+                <span style={{color:'#6366F1', fontSize:11}}>{smsTimer>0?`${smsTimer}s`:'Resend'}</span>
+              </div>
+              <OTPInput digits={smsOtp} onChange={setSmsOtp} disabled={smsVerified} dark/>
+              {smsVerified && <span className="at-badge approved" style={{marginTop:10, display:'inline-flex'}}><I.check size={11}/> Verified</span>}
+              {!smsVerified && smsOtp.every(d=>d) && (
+                <button className="at-btn block" style={{background:'#6366F1', borderColor:'#6366F1', marginTop:14}} onClick={verifySms}>Verify and continue</button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default AdminOTP;

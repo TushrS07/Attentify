@@ -1,315 +1,158 @@
-import React, { useEffect, useRef, useState } from 'react'
-import axios from 'axios'
-import { useNavigate } from 'react-router-dom'
-import { TEACHER_API as API } from '../../config/api'
-import { Sidebar } from '../../components/SidebarTeacher'
-import TeacherName from '../../components/ProfileNameTeacher'
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { I } from '../../components/Icons';
+import Field from '../../components/Field';
+import { toast } from '../../components/Toast';
+import { API_URL, FACE_RECOGNITION_URL } from '../../config/api';
 
-const Attendance = () => {
-  const navigate = useNavigate()
-  const videoRef = useRef(null)
-  const canvasRef = useRef(null)
-  const attendanceRef = useRef([])
-  const [recognizedName, setRecognizedName] = useState('Waiting for recognition...')
-  const [isCapturing, setIsCapturing] = useState(false)
-  const [sessionData, setSessionData] = useState(null)
-  const [subjectId, setSubjectId] = useState('')
-  const [sectionId, setSectionId] = useState('')
-  const [attendanceList, setAttendanceList] = useState([])
-  const [message, setMessage] = useState('')
-  const [date, setDate] = useState('')
-  const [lectureSlot, setLectureSlot] = useState('')
+const TakeAttendance = () => {
+  const navigate = useNavigate();
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const attendedRef = useRef(new Set());
+  const intervalRef = useRef(null);
 
-  const startVideo = async () => {
+  const [subjectId, setSubjectId] = useState('');
+  const [sectionId, setSectionId] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [lectureSlot, setLectureSlot] = useState('');
+  const [sessionData, setSessionData] = useState(null);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [attendanceList, setAttendanceList] = useState([]);
+
+  const startSession = async () => {
+    if (!subjectId || !sectionId || !lectureSlot) return toast.error('Fill all session fields');
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-      }
-    } catch (error) {
-      console.error('Error accessing webcam:', error)
-      setMessage('Error accessing webcam. Please check permissions.')
+      const res = await axios.post(`${API_URL}/api/attendance/start-session`, { subjectId, sectionId, date, lectureSlot }, { withCredentials: true });
+      setSessionData(res.data);
+      toast.success('Session started');
+      startCapturing();
+    } catch (err) {
+      if (err.response?.status === 401) { toast.error('Session expired'); navigate('/teacher/login'); return; }
+      toast.error(err.response?.data?.message || 'Failed to start session');
     }
-  }
+  };
 
-  const startAttendanceSession = async () => {
-    if (!subjectId || !sectionId || !date || !lectureSlot) {
-      setMessage('Please enter subject, section, date, and lecture slot details')
-      return
-    }
-
+  const startCapturing = async () => {
     try {
-      const response = await axios.post(
-        API.START_SESSION,
-        { subjectId, sectionId, date, lectureSlot },
-        { withCredentials: true }
-      )
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); }
+      setIsCapturing(true);
+    } catch { toast.error('Camera access denied'); }
+  };
 
-      setSessionData(response.data.sessionData)
-      setMessage("Attendance session started. Click 'Start Capturing' to begin face recognition.")
-    } catch (error) {
-      console.error('Error starting attendance session:', error)
-      if (error.response?.status === 401) {
-        setMessage('Session expired. Please login again.')
-        navigate('/teacher/login')
-      } else {
-        setMessage(error.response?.data?.message || 'Failed to start attendance session')
-      }
-    }
-  }
+  const stopCapturing = () => {
+    if (videoRef.current?.srcObject) { videoRef.current.srcObject.getTracks().forEach(t => t.stop()); }
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setIsCapturing(false);
+  };
 
-  const toggleCapturing = () => {
-    if (!sessionData) {
-      setMessage('Please start an attendance session first')
-      return
-    }
-
-    if (!isCapturing) {
-      startVideo()
-      setIsCapturing(true)
-      setMessage('Capturing started. Face recognition is active.')
-    } else {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = videoRef.current.srcObject.getTracks()
-        tracks.forEach(track => track.stop())
-      }
-      setIsCapturing(false)
-      setMessage('Capturing stopped.')
-    }
-  }
-
-  const captureFrame = async () => {
-    if (!videoRef.current || !canvasRef.current || !isCapturing || !sessionData) return
-
-    const canvas = canvasRef.current
-    const context = canvas.getContext('2d')
-    canvas.width = videoRef.current.videoWidth
-    canvas.height = videoRef.current.videoHeight
-    context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height)
-
-    canvas.toBlob(async blob => {
-      const formData = new FormData()
-      formData.append('image', blob, 'frame.jpg')
-
+  const captureAndRecognize = useCallback(async () => {
+    if (!videoRef.current || !canvasRef.current || !isCapturing) return;
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
       try {
-        const recognitionResponse = await axios.post(API.RECOGNIZE_FACE, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        })
-
-        if (
-          recognitionResponse.data.confidence >= 50 &&
-          recognitionResponse.data.status === 'Face recognized' &&
-          recognitionResponse.data.name !== 'UNKNOWN'
-        ) {
-          setRecognizedName(recognitionResponse.data.name)
-
-          const attendanceResponse = await axios.post(
-            API.RECORD_ATTENDANCE,
-            {
-              studentName: recognitionResponse.data.name,
-              sectionId: sessionData.sectionId,
-              subjectId: sessionData.subjectId,
-              lectureSlot: sessionData.lectureSlot
-            },
-            { withCredentials: true }
-          )
-
-          if (attendanceResponse.data.message === 'Attendance recorded successfully') {
-            const newEntry = {
-              name: recognitionResponse.data.name,
-              time: new Date().toLocaleTimeString(),
-              confidence: recognitionResponse.data.confidence
-            }
-
-            const alreadyExists = attendanceRef.current.some(item => item.name === newEntry.name)
-            if (!alreadyExists) {
-              const updatedList = [...attendanceRef.current, newEntry]
-              attendanceRef.current = updatedList
-              setAttendanceList(updatedList)
-            }
+        const fd = new FormData();
+        fd.append('image', blob, 'frame.jpg');
+        const res = await axios.post(`${FACE_RECOGNITION_URL}/recognize`, fd, { headers: { 'Content-Type': 'multipart/form-data' }});
+        if (res.data.status === 'Face recognized' && res.data.confidence >= 50 && !attendedRef.current.has(res.data.name)) {
+          attendedRef.current.add(res.data.name);
+          const recRes = await axios.post(`${API_URL}/api/attendance/record`, { studentName: res.data.name, sectionId, subjectId, lectureSlot }, { withCredentials: true });
+          if (recRes.data.message === 'Attendance recorded successfully') {
+            setAttendanceList(prev => [...prev, { name: res.data.name, confidence: res.data.confidence, time: new Date().toLocaleTimeString() }]);
           }
-        } else if (recognitionResponse.data.status === 'No face detected') {
-          setRecognizedName('No face detected')
-        } else {
-          setRecognizedName('Unknown person')
         }
-      } catch (error) {
-        console.error('Error:', error)
-        if (error.response?.status === 401) {
-          setMessage('Session expired. Please login again.')
-          navigate('/teacher/login')
-        } else {
-          setRecognizedName('Recognition failed')
-        }
-      }
-    }, 'image/jpeg')
-  }
+      } catch {}
+    }, 'image/jpeg');
+  }, [isCapturing, sectionId, subjectId, lectureSlot]);
 
   useEffect(() => {
-    let interval
     if (isCapturing) {
-      interval = setInterval(captureFrame, 2000)
+      intervalRef.current = setInterval(captureAndRecognize, 2000);
     }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [isCapturing, captureAndRecognize]);
 
-    return () => {
-      if (interval) clearInterval(interval)
-      if (videoRef.current && videoRef.current.srcObject) {
-        const tracks = videoRef.current.srcObject.getTracks()
-        tracks.forEach(track => track.stop())
-      }
-    }
-  }, [isCapturing, sessionData])
+  useEffect(() => { return stopCapturing; }, []);
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="flex-1 min-h-screen bg-gray-50 mb-5 ml-0 custom:ml-64">
-        {/* Greeting Section */}
-        <div className="mx-auto mb-6 mt-20 max-w-7xl">
-          <div className="pt-10 px-6 md:px-16 mx-4 h-52 rounded-lg bg-gradient-to-r from-indigo-500 via-purple-500 to-purple-600">
-            <h1 className="text-white text-3xl lg:text-5xl font-bold mb-2">
-              Welcome back, <TeacherName />!
-            </h1>
-            <p className="text-white text-sm lg:text-base">
-              Facial Recognition Attendance System
-            </p>
-          </div>
+    <>
+      <div className="at-card" style={{padding:14, marginBottom:12}}>
+        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(140px, 1fr)) auto', gap:10, alignItems:'end'}}>
+          <Field label="Subject" required><input className="at-input" value={subjectId} onChange={e=>setSubjectId(e.target.value)} placeholder="CS201"/></Field>
+          <Field label="Group" required><input className="at-input" value={sectionId} onChange={e=>setSectionId(e.target.value)} placeholder="04"/></Field>
+          <Field label="Date" required><input className="at-input" type="date" value={date} onChange={e=>setDate(e.target.value)}/></Field>
+          <Field label="Lecture slot" required>
+            <select className="at-select" value={lectureSlot} onChange={e=>setLectureSlot(e.target.value)}>
+              <option value="">Select</option><option value="1-3">1-3 pm</option><option value="3-5">3-5 pm</option><option value="5-8">5-8 pm</option>
+            </select>
+          </Field>
+          {!isCapturing ? (
+            <button className="at-btn success" onClick={startSession} style={{background:'#10B981', borderColor:'#10B981'}}><I.play size={11}/> Start</button>
+          ) : (
+            <button className="at-btn sm" onClick={stopCapturing} style={{background:'#EF4444', borderColor:'#EF4444'}}><I.stop size={10}/> Stop</button>
+          )}
         </div>
+      </div>
 
-        <div className="max-w-7xl mx-auto px-4">
-          {/* Session Form */}
-          <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-            <h2 className="text-lg font-semibold mb-4">Start Attendance Session</h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Subject ID</label>
-                <input
-                  type="text"
-                  placeholder="e.g. BT101"
-                  value={subjectId}
-                  onChange={e => setSubjectId(e.target.value)}
-                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                />
+      <div style={{display:'grid', gridTemplateColumns:'1.3fr 1fr', gap:16}}>
+        <div style={{position:'relative', aspectRatio:'16/10', borderRadius:10, overflow:'hidden', background:'#0F0E17'}}>
+          <video ref={videoRef} style={{width:'100%', height:'100%', objectFit:'cover'}} muted playsInline/>
+          <canvas ref={canvasRef} style={{display:'none'}}/>
+          {isCapturing && (
+            <>
+              <div className="at-camera-scan"/>
+              <div style={{position:'absolute', top:12, left:12, right:12, display:'flex', justifyContent:'space-between', color:'white', fontFamily:'var(--ff-mono)', fontSize:10}}>
+                <span style={{background:'rgba(0,0,0,0.4)', padding:'3px 7px', borderRadius:3}}>● REC</span>
+                <span style={{background:'rgba(0,0,0,0.4)', padding:'3px 7px', borderRadius:3}}>{attendanceList.length} MARKED</span>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Section ID</label>
-                <input
-                  type="text"
-                  placeholder="e.g. 29"
-                  value={sectionId}
-                  onChange={e => setSectionId(e.target.value)}
-                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                />
+              <div style={{position:'absolute', bottom:12, left:12, right:12, background:'rgba(15,14,23,0.75)', backdropFilter:'blur(10px)', borderRadius:8, padding:'10px 14px', color:'white', fontSize:12, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <span><span style={{display:'inline-block', width:7, height:7, borderRadius:'50%', background:'#86EFAC', marginRight:8}}/>Recognizing — {attendanceList.length} marked</span>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Date</label>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={e => setDate(e.target.value)}
-                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Lecture Slot</label>
-                <select
-                  value={lectureSlot}
-                  onChange={e => setLectureSlot(e.target.value)}
-                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="">Select Slot</option>
-                  <option value="1-3">1-3</option>
-                  <option value="3-5">3-5</option>
-                  <option value="5-8">5-8</option>
-                </select>
-              </div>
-            </div>
-            <button
-              onClick={startAttendanceSession}
-              className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-md shadow transition-colors"
-            >
-              Start Session
-            </button>
-          </div>
-
-          {/* Message */}
-          {message && (
-            <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 text-sm text-gray-700">
-              {message}
+            </>
+          )}
+          {!isCapturing && !sessionData && (
+            <div style={{position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', color:'#6B6880', fontSize:13}}>
+              <div style={{textAlign:'center'}}><I.camera size={32}/><div style={{marginTop:8}}>Start a session to begin</div></div>
             </div>
           )}
+        </div>
 
-          {/* Camera Section */}
-          <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-            <h2 className="text-lg font-semibold mb-4">Face Recognition</h2>
-            <div className="flex flex-col items-center">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                width="640"
-                height="480"
-                className={`border-2 border-indigo-400 rounded-lg ${isCapturing ? 'block' : 'hidden'}`}
-              />
-              <canvas ref={canvasRef} className="hidden" />
-
-              <button
-                onClick={toggleCapturing}
-                className={`mt-4 py-2 px-6 rounded-md shadow text-white transition-colors ${
-                  isCapturing
-                    ? 'bg-red-500 hover:bg-red-600'
-                    : 'bg-indigo-600 hover:bg-indigo-700'
-                }`}
-              >
-                {isCapturing ? 'Stop Capturing' : 'Start Capturing'}
-              </button>
-
-              {isCapturing && (
-                <p className="mt-4 text-lg font-semibold text-indigo-600">
-                  {recognizedName}
-                </p>
-              )}
-            </div>
+        <div className="at-card" style={{padding:0, overflow:'hidden', display:'flex', flexDirection:'column'}}>
+          <div style={{padding:'14px 16px', borderBottom:'1px solid var(--line)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+            <div><div className="at-card-title">Live roster</div><div className="at-card-h">{attendanceList.length} present</div></div>
+            {isCapturing && <div className="at-pill">Auto-saving</div>}
           </div>
-
-          {/* Attendance Record */}
-          <div className="bg-white p-6 rounded-lg shadow-sm mb-10">
-            <h2 className="text-lg font-semibold mb-4">Attendance Record</h2>
-            {attendanceList.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <p>No attendance records yet.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Confidence</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {attendanceList.map((entry, index) => (
-                      <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{entry.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{entry.time}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            {entry.confidence.toFixed(2)}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          <div style={{flex:1, overflow:'auto'}}>
+            <table className="at-table">
+              <thead><tr><th>Student</th><th>Time</th><th style={{textAlign:'right'}}>Conf.</th></tr></thead>
+              <tbody>
+                {attendanceList.map((r,i) => (
+                  <tr key={i}>
+                    <td style={{display:'flex', alignItems:'center', gap:8}}>
+                      <span style={{width:22, height:22, borderRadius:'50%', background:'var(--indigo-100)', color:'var(--indigo-700)', fontSize:10, display:'inline-flex', alignItems:'center', justifyContent:'center', fontWeight:500}}>{r.name.split(' ').map(x=>x[0]).join('').slice(0,2)}</span>
+                      {r.name}
+                    </td>
+                    <td className="at-mono" style={{fontSize:11}}>{r.time}</td>
+                    <td className="at-mono" style={{textAlign:'right', fontSize:11.5, color: r.confidence>=90?'var(--ok)':'var(--warn)'}}>{r.confidence.toFixed(1)}%</td>
+                  </tr>
+                ))}
+                {attendanceList.length === 0 && <tr><td colSpan={3} style={{textAlign:'center', color:'var(--ink-4)', padding:20}}>No students recognized yet</td></tr>}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
-    </div>
-  )
-}
 
-export default Attendance
+      <style>{`@media(max-width:768px){.at-card+div{grid-template-columns:1fr!important}}`}</style>
+    </>
+  );
+};
+
+export default TakeAttendance;

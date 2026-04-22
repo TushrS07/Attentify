@@ -1,4 +1,3 @@
-// ProtectedRoute.jsx
 import { Navigate } from "react-router-dom";
 import axios from "axios";
 import { useEffect, useState } from "react";
@@ -29,10 +28,10 @@ const ProtectedRoute = ({ children, role = "student" }) => {
 
   if (auth === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-[#3b1e8a] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm text-slate-500 font-medium">Loading...</p>
+      <div className="at-root" style={{display:'flex', alignItems:'center', justifyContent:'center'}}>
+        <div style={{textAlign:'center'}}>
+          <div className="at-spinner" style={{margin:'0 auto 12px'}}/>
+          <div style={{fontSize:12, color:'var(--ink-3)'}}>Loading...</div>
         </div>
       </div>
     );

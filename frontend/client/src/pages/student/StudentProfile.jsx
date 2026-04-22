@@ -1,207 +1,101 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { SidebarStudent } from "../../components/SidebarStudent";
-import axios from "axios";
-import { Pencil, UserCircle } from "lucide-react";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { STUDENT_API as API } from "../../config/api";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { I } from '../../components/Icons';
+import { toast } from '../../components/Toast';
+import { API_URL } from '../../config/api';
 
-export default function StudentProfile() {
-  const [editing, setEditing] = useState(false);
-  const [profile, setProfile] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    rollno: "",
-    groupno: "",
-    department: "CSE",
-    guardianName: "",
-    guardianNumber: "",
-    image: "",
-  });
-
+const StudentProfile = () => {
   const navigate = useNavigate();
+  const [profile, setProfile] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const profileData = async () => {
-      try {
-        const response = await axios.get(API.DETAILS, {
-          withCredentials: true,
-        });
-        console.log(response.data);
-        if (response.data.success) {
-          const profileData = response.data.student;
-          setProfile({
-            name: profileData.name || "",
-            email: profileData.email || "",
-            phone: profileData.phone || "",
-            groupno: profileData.groupNumber || "",
-            rollno: profileData.rollNumber || "",
-            department: profileData.department || "CSE",
-            guardianName: profileData.guardianName || "",
-            guardianNumber: profileData.guardianPhoneNo || "",
-            image: profileData.uploadedImageUrl || "",
-          });
-        } else {
-          toast.error("Failed to fetch profile data");
-        }
-      } catch (error) {
-        console.error("Error fetching profile data:", error);
-        toast.error("Error fetching profile data");
-      }
-    };
-
-    profileData();
+    axios.get(`${API_URL}/api/student/details`, { withCredentials: true })
+      .then(res => {
+        const s = res.data.student || res.data;
+        setProfile(s);
+        setForm({ name: s.name||'', phone: s.phone||'', rollNumber: s.rollNumber||'', groupNumber: s.groupNumber||'', department: s.department||'CSE', guardianName: s.guardianName||'', guardianPhoneNo: s.guardianPhoneNo||'' });
+      })
+      .catch(() => toast.error('Failed to load profile'))
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleChange = (field, value) => {
-    setProfile({ ...profile, [field]: value });
+  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await axios.put(`${API_URL}/api/student/details`, form, { withCredentials: true });
+      toast.success('Profile updated');
+      setProfile({ ...profile, ...form });
+      setEditing(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save');
+    } finally { setSaving(false); }
   };
 
-  const handleEditClick = async () => {
-    if (editing) {
-      try {
-        const {
-          name,
-          phone,
-          rollno,
-          groupno,
-          department,
-          guardianName,
-          guardianNumber,
-          image,
-        } = profile;
+  if (loading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100%'}}><div className="at-spinner"/></div>;
+  if (!profile) return <div style={{textAlign:'center',padding:40,color:'var(--ink-3)'}}>No profile data found.</div>;
 
-        const response = await axios.put(
-          API.DETAILS,
-          {
-            name,
-            phone,
-            rollno,
-            groupno,
-            department,
-            guardianName,
-            guardianNumber,
-            image,
-          },
-          { withCredentials: true }
-        );
+  const initials = (profile.name || '').split(' ').map(w=>w[0]).join('').toUpperCase();
 
-        if (response.data.success) {
-          toast.success("Profile updated successfully!");
-        } else {
-          toast.error("Failed to update profile");
-        }
-      } catch (error) {
-        console.error("Error updating profile:", error);
-        toast.error("Error updating profile");
-      }
-    }
-    setEditing(!editing);
-  };
+  const fields = [
+    ['Name', 'name', true], ['Email', 'email', false], ['Phone', 'phone', true], ['Roll number', 'rollNumber', true],
+    ['Group', 'groupNumber', true], ['Department', 'department', true], ['Guardian name', 'guardianName', true], ['Guardian phone', 'guardianPhoneNo', true],
+  ];
 
   return (
-    <div className="flex">
-      <SidebarStudent />
-      <div className="flex-1 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 mt-20 ml-0 custom:ml-64">
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="colored"
-        />
-
-        <div className="mx-auto mb-6 max-w-7xl">
-          <div className="pt-10 px-6 md:px-16 mx-4 h-52 rounded-lg bg-gradient-to-r from-indigo-500 via-purple-500 to-purple-600">
-            <h1 className="text-white text-3xl lg:text-5xl font-bold mb-2">
-              Welcome, {profile.name || "Student"}!
-            </h1>
-            <p className="text-white text-sm lg:text-base">
-              View and update your profile information here.
-            </p>
-          </div>
+    <>
+      <div className="at-banner" style={{marginBottom:20, paddingBottom:56}}>
+        <h2>{profile.name || 'Student'}</h2>
+        <p>Roll {profile.rollNumber || '—'} · {profile.department || 'CSE'} · Group {profile.groupNumber || '—'}</p>
+      </div>
+      <div style={{display:'grid', gridTemplateColumns:'220px 1fr', gap:24, marginTop:-70}}>
+        <div>
+          {profile.uploadedImageUrl ? (
+            <img src={profile.uploadedImageUrl} alt="Profile" style={{width:132, height:132, borderRadius:'50%', border:'4px solid var(--paper)', objectFit:'cover'}}/>
+          ) : (
+            <div className="at-ph" style={{width:132, height:132, borderRadius:'50%', border:'4px solid var(--paper)', position:'relative'}}>
+              <span style={{position:'absolute', fontSize:14}}>{initials}</span>
+            </div>
+          )}
+          <button className="at-btn ghost sm" style={{marginTop:12, width:132}} onClick={() => navigate('/student/register2/image')}>
+            <I.camera size={12}/> Change image
+          </button>
         </div>
-
-        <div className="bg-white rounded-2xl p-8 max-w-7xl border border-gray-200 mx-4">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-blue-600 flex items-center gap-2">
-              <UserCircle size={32} /> Student Profile
-            </h2>
-          </div>
-
-          {/* Avatar section */}
-          <div className="flex flex-col items-center mb-6">
-            <img
-              src={profile.image}
-              alt="Profile"
-              className="w-32 h-32 rounded-full border-4 border-blue-600 shadow-md mb-4 object-cover"
-            />
-
-            {editing && (
-              <button
-                type="button"
-                onClick={() => navigate("/student/register2/image")}
-                className="text-sm bg-gray-100 border border-gray-300 px-3 py-1 rounded-full hover:bg-gray-200"
-              >
-                Change photo
-              </button>
+        <div>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12, marginTop:70}}>
+            <div className="at-card-h">Details</div>
+            {editing ? (
+              <div style={{display:'flex', gap:8}}>
+                <button className="at-btn ghost sm" onClick={() => setEditing(false)}>Cancel</button>
+                <button className="at-btn primary sm" onClick={save} disabled={saving}><I.check size={12}/> {saving?'Saving...':'Save changes'}</button>
+              </div>
+            ) : (
+              <button className="at-btn ghost sm" onClick={() => setEditing(true)}><I.edit size={12}/> Edit</button>
             )}
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-10">
-            <Field label="Name" value={profile.name} field="name" editing={editing} handleChange={handleChange} />
-            <div>
-              <label className="block text-md font-semibold text-gray-600">Email</label>
-              <input
-                type="email"
-                value={profile.email}
-                disabled
-                className="mt-1 block w-full bg-gray-100 rounded-md border-gray-300 shadow-sm outline-none"
-              />
-            </div>
-            <Field label="Phone" value={profile.phone} field="phone" editing={editing} handleChange={handleChange} />
-            <Field label="Roll No." value={profile.rollno} field="rollno" editing={editing} handleChange={handleChange} />
-            <Field label="Group No." value={profile.groupno} field="groupno" editing={editing} handleChange={handleChange} />
-            <Field label="Department" value={profile.department} field="department" editing={editing} handleChange={handleChange} />
-            <Field label="Guardian Name" value={profile.guardianName} field="guardianName" editing={editing} handleChange={handleChange} />
-            <Field label="Guardian Number" value={profile.guardianNumber} field="guardianNumber" editing={editing} handleChange={handleChange} />
-          </div>
-
-          <div className="flex w-full align-center justify-end">
-            <button
-              onClick={handleEditClick}
-              className="text-sm bg-blue-600 text-white mt-10 px-4 py-2 rounded-full flex items-center gap-2 hover:bg-blue-700 outline-none"
-            >
-              <Pencil size={16} /> {editing ? "Save" : "Edit Profile"}
-            </button>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
+            {fields.map(([label, key, editable]) => (
+              <div key={key} className="at-card" style={{padding:'12px 14px'}}>
+                <div style={{fontSize:10.5, color:'var(--ink-3)', letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:4}}>{label}{!editable && ' · read only'}</div>
+                {editing && editable ? (
+                  <input className="at-input" value={form[key]||''} onChange={set(key)} style={{padding:'5px 8px', fontSize:13}}/>
+                ) : (
+                  <div style={{fontSize:13.5, fontWeight:500}}>{key==='email' ? profile.email : (form[key] || '—')}</div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>
-    </div>
+      <style>{`@media(max-width:768px){.at-banner+div{grid-template-columns:1fr!important;margin-top:-40px!important}}`}</style>
+    </>
   );
-}
+};
 
-function Field({ label, value, field, editing, handleChange }) {
-  return (
-    <div>
-      <label className="block text-md font-semibold text-gray-600">{label}</label>
-      {editing ? (
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => handleChange(field, e.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 outline-none"
-        />
-      ) : (
-        <p className="mt-1 text-gray-900">{value}</p>
-      )}
-    </div>
-  );
-}
+export default StudentProfile;

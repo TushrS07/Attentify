@@ -1,75 +1,69 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { ADMIN_API as API } from "../../config/api";
-import { KeyRound, Eye, EyeOff } from "lucide-react";
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { I } from '../../components/Icons';
+import Field from '../../components/Field';
+import { toast } from '../../components/Toast';
+import { API_URL } from '../../config/api';
 
-export default function ForgotPassword() {
-  const [formData, setFormData] = useState({ newPassword: "", confirmPassword: "" });
-  const [loading, setLoading] = useState(false);
-  const [show, setShow] = useState({ new: false, confirm: false });
+const AdminForgotPassword = () => {
   const navigate = useNavigate();
+  const [form, setForm] = useState({ newPassword:'', confirmPassword:'' });
+  const [loading, setLoading] = useState(false);
+  const set = (k) => (e) => setForm({...form, [k]:e.target.value});
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    if (formData.newPassword.length < 8) { toast.error("Password must be at least 8 characters long."); setLoading(false); return; }
-    if (formData.newPassword !== formData.confirmPassword) { toast.error("Passwords do not match."); setLoading(false); return; }
-    try {
-      const response = await axios.post(API.FORGOT_PASSWORD, { newPassword: formData.newPassword }, { withCredentials: true });
-      if (response.status === 200) {
-        toast.success(response.data.message || "Password updated successfully!");
-        setTimeout(() => navigate("/admin/login"), 2000);
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Server error. Please try again later.");
-    } finally { setLoading(false); }
+  const strength = () => {
+    const p = form.newPassword; let s = 0;
+    if (p.length >= 12) s++; if (/[A-Z]/.test(p)) s++; if (/[0-9]/.test(p)) s++; if (/[^A-Za-z0-9]/.test(p)) s++;
+    return s;
   };
 
+  const submit = async (e) => {
+    e.preventDefault();
+    if (form.newPassword.length < 12) return toast.error('Minimum 12 characters');
+    if (form.newPassword !== form.confirmPassword) return toast.error('Passwords do not match');
+    setLoading(true);
+    try {
+      await axios.post(`${API_URL}/api/admin/reset-password`, { newPassword:form.newPassword }, { withCredentials:true });
+      toast.success('Password updated');
+      setTimeout(()=>navigate('/admin/login'),1500);
+    } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
+    finally { setLoading(false); }
+  };
+
+  const s = strength();
+
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-16">
-      <ToastContainer position="top-right" autoClose={3000} theme="colored" />
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-slate-100 rounded-xl mb-4">
-            <KeyRound size={22} className="text-slate-700" />
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900 font-serif">Forgot Password?</h1>
-          <p className="text-slate-500 mt-2 text-sm">Enter a new password for your admin account.</p>
+    <div className="at-root" style={{height:'100%'}}>
+      <div className="at-auth">
+        <div className="at-auth-left admin">
+          <div className="at-auth-brand" style={{color:'#E6E8EE'}}><div className="at-logo" style={{background:'#E6E8EE', color:'var(--admin-slate)'}}>A</div> Attentify</div>
+          <div className="at-auth-quote" style={{color:'#E6E8EE'}}>Rotate the <em>admin key</em>. Carefully.</div>
+          <div style={{fontSize:11, color:'#6B738A'}}>Changes logged to audit trail.</div>
         </div>
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {[
-              { label: "New Password", field: "new", key: "newPassword", placeholder: "Minimum 8 characters" },
-              { label: "Confirm New Password", field: "confirm", key: "confirmPassword", placeholder: "Repeat your new password" }
-            ].map(({ label, field, key, placeholder }) => (
-              <div key={field}>
-                <label className="block text-sm font-semibold text-slate-800 mb-1.5">{label}</label>
-                <div className="relative">
-                  <input type={show[field] ? "text" : "password"} value={formData[key]}
-                    onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                    required placeholder={placeholder}
-                    className="block w-full rounded-lg border border-slate-200 py-2.5 px-4 pr-11 text-slate-900 text-sm placeholder:text-slate-400 focus:ring-2 focus:ring-slate-800 focus:border-slate-800 transition-all bg-slate-50 focus:bg-white outline-none" />
-                  <button type="button" onClick={() => setShow(s => ({ ...s, [field]: !s[field] }))}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors">
-                    {show[field] ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-            ))}
-            <button type="submit" disabled={loading}
-              className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg transition-all text-sm disabled:opacity-70 mt-2">
-              {loading ? "Updating..." : "Set New Password"}
+        <div className="at-auth-right" style={{background:'#0B1220', color:'#E6E8EE'}}>
+          <form className="at-auth-card" onSubmit={submit}>
+            <div style={{display:'inline-flex', alignItems:'center', gap:6, padding:'3px 9px', border:'1px solid rgba(255,255,255,0.15)', borderRadius:999, fontSize:11, color:'#8B93A7', marginBottom:12}}><I.lock size={11}/> Admin</div>
+            <div className="at-auth-title" style={{color:'#fff'}}>Reset admin password.</div>
+            <div className="at-auth-sub" style={{color:'#8B93A7'}}>Minimum 12 characters. Include number and symbol.</div>
+            <div style={{display:'flex', flexDirection:'column', gap:12, marginTop:22}}>
+              <Field label="New password" required><input className="at-input" type="password" value={form.newPassword} onChange={set('newPassword')} style={{background:'#131B2E', borderColor:'#1F2A45', color:'#E6E8EE'}}/></Field>
+              <Field label="Confirm new password" required><input className="at-input" type="password" value={form.confirmPassword} onChange={set('confirmPassword')} style={{background:'#131B2E', borderColor:'#1F2A45', color:'#E6E8EE'}}/></Field>
+              {form.newPassword && (
+                <>
+                  <div style={{display:'flex', gap:4}}>{[0,1,2,3].map(i=><div key={i} style={{flex:1, height:3, borderRadius:2, background:i<s?'#10B981':'#1F2A45'}}/>)}</div>
+                  <div style={{fontSize:11, color:s>=4?'#10B981':'#8B93A7'}}>{s>=4?'Excellent — all criteria met.':s>=3?'Strong':'Keep going...'}</div>
+                </>
+              )}
+            </div>
+            <button className="at-btn lg block" type="submit" disabled={loading} style={{background:'#6366F1', borderColor:'#6366F1', marginTop:16}}>
+              {loading ? 'Setting...' : 'Set new admin password'}
             </button>
           </form>
-          <div className="mt-5 text-center">
-            <button onClick={() => navigate("/admin/login")}
-              className="text-sm text-slate-500 hover:text-slate-800 transition-colors">← Back to Login</button>
-          </div>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default AdminForgotPassword;

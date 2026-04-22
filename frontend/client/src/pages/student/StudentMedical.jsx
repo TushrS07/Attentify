@@ -1,232 +1,104 @@
-"use client";
+import React, { useState } from 'react';
+import { I } from '../../components/Icons';
+import Field from '../../components/Field';
+import { toast } from '../../components/Toast';
 
-import { useState } from "react";
-import { SidebarStudent } from "../../components/SidebarStudent";
-import { Upload } from "lucide-react"; // Icon for upload
-import StudentName from "../../components/ProfileNameStudent";
-import { toast, ToastContainer } from "react-toastify"; // Import Toastify
-import "react-toastify/dist/ReactToastify.css"; // Import Toastify styles
-
-const initialLeaves = [
-  {
-    id: 1,
-    name: "John Doe",
-    group: "3",
-    from: "2024-02-01",
-    to: "2024-02-05",
-    mentor: "Dr. Smith",
-    proof: { name: "medical_proof_1.pdf" },
-    status: "approved",
-  },
-  {
-    id: 2,
-    name: "John Doe",
-    group: "3",
-    from: "2024-01-10",
-    to: "2024-01-14",
-    mentor: "Dr. Adams",
-    proof: { name: "medical_proof_2.pdf" },
-    status: "rejected",
-  },
+const mockLeaves = [
+  { id:1, reason:'Viral fever', status:'pending', from:'18 Apr', to:'20 Apr', mentor:'Dr. Iyer', file:'fever_note.pdf' },
+  { id:2, reason:'Dental procedure', status:'approved', from:'02 Apr', to:'03 Apr', mentor:'Dr. Iyer' },
+  { id:3, reason:'Personal', status:'rejected', from:'14 Mar', to:'14 Mar', mentor:'Dr. Iyer', note:'Reason required for personal leave.' },
 ];
 
-export default function StudentMedicalPage() {
-  const [userName] = useState("John Doe");
-  const [activeTab, setActiveTab] = useState("apply");
-  const [formData, setFormData] = useState({
-    from: "",
-    to: "",
-    mentor: "",
-    proof: null,
-  });
-  const [leaveApplications, setLeaveApplications] = useState(initialLeaves);
+const StudentMedical = () => {
+  const [tab, setTab] = useState('apply');
+  const [form, setForm] = useState({ from:'', to:'', mentor:'', file:null });
+  const set = (k) => (e) => setForm({...form, [k]: e.target.value});
+  const pending = mockLeaves.filter(l=>l.status==='pending');
+  const approved = mockLeaves.filter(l=>l.status==='approved');
+  const rejected = mockLeaves.filter(l=>l.status==='rejected');
 
-  const handleSubmit = (e) => {
+  const submit = (e) => {
     e.preventDefault();
-
-    // Validation: Check if all fields are filled
-    if (!formData.from || !formData.to || !formData.mentor || !formData.proof) {
-      toast.error("Please fill in all fields before submitting!");
-      return;
-    }
-
-    // Validation: Check if From Date is greater than To Date
-    if (new Date(formData.from) > new Date(formData.to)) {
-      toast.error("From Date cannot be greater than To Date!");
-      return;
-    }
-
-    const newLeave = {
-      id: leaveApplications.length + 1,
-      name: userName,
-      group: "3",
-      from: formData.from,
-      to: formData.to,
-      mentor: formData.mentor,
-      proof: formData.proof,
-      status: "pending",
-    };
-    setLeaveApplications([...leaveApplications, newLeave]);
-    setFormData({ from: "", to: "", mentor: "", proof: null });
-    toast.success("Medical leave applied successfully.");
+    if (!form.from || !form.to || !form.mentor) return toast.error('Please fill all required fields');
+    toast.success('Leave request submitted');
+    setForm({ from:'', to:'', mentor:'', file:null });
   };
 
-  const filteredLeaves = leaveApplications.filter(
-    (leave) => leave.status === activeTab || activeTab === "applied"
-  );
+  const tabs = [
+    { key:'apply', label:'Apply' },
+    { key:'applied', label:'Applied', count: mockLeaves.length },
+    { key:'pending', label:'Pending', count: pending.length },
+    { key:'approved', label:'Approved', count: approved.length },
+    { key:'rejected', label:'Rejected', count: rejected.length },
+  ];
+
+  const filtered = tab==='pending'?pending : tab==='approved'?approved : tab==='rejected'?rejected : mockLeaves;
 
   return (
-    <div className="flex">
-      <SidebarStudent />
-      <div className="flex-1 min-h-screen bg-gray-50 mb-5 ml-0 custom:ml-64">
-        {/* ToastContainer for displaying notifications */}
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="colored"
-        />
-
-        <div className="mx-auto mb-6 mt-20 max-w-7xl">
-          <div className="pt-10 px-6 md:px-16 mx-4 h-52 rounded-lg bg-gradient-to-r from-indigo-500 via-purple-500 to-purple-600">
-            <h1 className="text-white text-3xl lg:text-5xl font-bold mb-2">
-              Welcome, <StudentName/>!
-            </h1>
-            <p className="text-white text-sm lg:text-base">
-              Apply for medical leave and track your application status here.
-            </p>
+    <>
+      <div className="at-tabs" style={{marginBottom:16}}>
+        {tabs.map(t => (
+          <div key={t.key} className={`at-tab ${tab===t.key?'active':''}`} onClick={()=>setTab(t.key)}>
+            {t.label}{t.count!=null && <span className="count">{t.count}</span>}
           </div>
-        </div>
+        ))}
+      </div>
 
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="mt-6 flex justify-evenly border-b">
-            {["apply", "applied", "approved", "rejected"].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 text-lg font-semibold transition duration-200 ease-in-out ${
-                  activeTab === tab
-                    ? "border-b-4 border-indigo-500 text-indigo-600"
-                    : "text-gray-500"
-                }`}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
+      {tab === 'apply' ? (
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:14}}>
+          <form className="at-card" onSubmit={submit}>
+            <div className="at-card-h" style={{marginBottom:14}}>New leave request</div>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12}}>
+              <Field label="From date" required><input className="at-input" type="date" value={form.from} onChange={set('from')}/></Field>
+              <Field label="To date" required><input className="at-input" type="date" value={form.to} onChange={set('to')}/></Field>
+              <div style={{gridColumn:'span 2'}}><Field label="Mentor name" required><input className="at-input" value={form.mentor} onChange={set('mentor')} placeholder="Dr. Meera Iyer"/></Field></div>
+              <div style={{gridColumn:'span 2'}}>
+                <Field label="Medical proof" required>
+                  <div className="at-drop" style={{padding:18}} onClick={() => document.getElementById('med-file').click()}>
+                    <div className="icon"><I.upload size={16}/></div>
+                    <div style={{fontSize:12}}>{form.file ? <b>{form.file.name}</b> : 'Click to upload proof'}</div>
+                    <div style={{fontSize:11, color:'var(--ink-4)'}}>PDF or image · max 5 MB</div>
+                  </div>
+                  <input id="med-file" type="file" accept=".pdf,.jpg,.png" style={{display:'none'}} onChange={e => setForm({...form, file: e.target.files[0]})}/>
+                </Field>
+              </div>
+            </div>
+            <button className="at-btn primary lg block" type="submit" style={{marginTop:14}}>Submit request</button>
+          </form>
+          <div>
+            {mockLeaves.map(l => (
+              <div key={l.id} className="at-card" style={{padding:14, marginBottom:10}}>
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                  <div style={{fontSize:13, fontWeight:500}}>{l.reason}</div>
+                  <span className={`at-badge ${l.status}`}>{l.status}</span>
+                </div>
+                <div style={{fontSize:11.5, color:'var(--ink-3)', marginTop:4}}>{l.from} → {l.to} · Mentor: {l.mentor}</div>
+                {l.file && <div style={{fontSize:11.5, color:'var(--ink-3)', marginTop:6, display:'flex', gap:6, alignItems:'center'}}><I.file size={11}/> {l.file}</div>}
+                {l.note && <div style={{fontSize:11.5, color:'var(--ink-3)', marginTop:6}}>{l.note}</div>}
+              </div>
             ))}
           </div>
-
-          {activeTab === "apply" && (
-            <form
-              onSubmit={handleSubmit}
-              className="bg-white p-6 rounded-lg shadow-md mt-6 mb-8"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block mb-1 font-medium">From Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.from}
-                    onChange={(e) =>
-                      setFormData({ ...formData, from: e.target.value })
-                    }
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 font-medium">To Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.to}
-                    onChange={(e) =>
-                      setFormData({ ...formData, to: e.target.value })
-                    }
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 font-medium">Mentor Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.mentor}
-                    onChange={(e) =>
-                      setFormData({ ...formData, mentor: e.target.value })
-                    }
-                    className="w-full border rounded px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-1 font-medium">Upload Medical Proof</label>
-                  <label className="flex items-center gap-3 px-3 py-2 border rounded cursor-pointer hover:bg-gray-100 transition">
-                    <Upload className="w-5 h-5 text-indigo-500" />
-                    <span className="text-gray-700 text-sm">
-                      {formData.proof ? formData.proof.name : "Upload File"}
-                    </span>
-                    <input
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      required
-                      className="hidden"
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          proof: e.target.files[0],
-                        })
-                      }
-                    />
-                  </label>
-
-                </div>
-              </div>
-              <div className="mt-4 text-right">
-                <button
-                  type="submit"
-                  className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700"
-                >
-                  Submit Leave
-                </button>
-              </div>
-            </form>
-          )}
-
-          {(activeTab === "applied" || activeTab === "approved" || activeTab === "rejected") && (
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredLeaves.length > 0 ? (
-                filteredLeaves.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-4 bg-white rounded-lg shadow-md"
-                  >
-                    <h2 className="text-lg font-semibold">Name: {item.name}</h2>
-                    <p className="text-sm text-gray-600">Group: {item.group}</p>
-                    <p className="text-sm text-gray-600">
-                      Date: {item.from} - {item.to}
-                    </p>
-                    <p className="text-sm text-gray-600">Mentor: {item.mentor}</p>
-                    <p className="text-sm text-gray-600">
-                      Proof: {item.proof?.name || "Uploaded"}
-                    </p>
-                    <p className={`text-sm ${item.status === "approved" ? "text-green-500" : "text-red-500"}`}>
-                      Status: {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500 font-semibold">
-                  No records found...
-                </p>
-              )}
-            </div>
-          )}
         </div>
-      </div>
-    </div>
+      ) : (
+        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))', gap:12}}>
+          {filtered.map(l => (
+            <div key={l.id} className="at-card" style={{padding:14}}>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <div style={{fontSize:13, fontWeight:500}}>{l.reason}</div>
+                <span className={`at-badge ${l.status}`}>{l.status}</span>
+              </div>
+              <div style={{fontSize:11.5, color:'var(--ink-3)', marginTop:4}}>{l.from} → {l.to} · Mentor: {l.mentor}</div>
+              {l.file && <div style={{fontSize:11.5, color:'var(--ink-3)', marginTop:6}}><I.file size={11}/> {l.file}</div>}
+              {l.note && <div style={{fontSize:11.5, color:'var(--ink-3)', marginTop:6}}>{l.note}</div>}
+            </div>
+          ))}
+          {filtered.length === 0 && <div style={{color:'var(--ink-3)', fontSize:13, padding:20}}>No {tab} leaves found.</div>}
+        </div>
+      )}
+
+      <style>{`@media(max-width:768px){.at-card form+div,.at-tabs+div{grid-template-columns:1fr!important}}`}</style>
+    </>
   );
-}
+};
+
+export default StudentMedical;

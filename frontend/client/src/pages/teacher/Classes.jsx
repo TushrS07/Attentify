@@ -1,200 +1,68 @@
-"use client";
-import { useState } from "react";
-import { Sidebar } from "../../components/SidebarTeacher";
-import TeacherName from "../../components/ProfileNameTeacher";
-import { ToastContainer, toast } from "react-toastify"; // Add Toastify
-import "react-toastify/dist/ReactToastify.css"; // Import Toastify styles
+import React, { useState } from 'react';
+import { I } from '../../components/Icons';
+import Field from '../../components/Field';
+import { toast } from '../../components/Toast';
 
-function Classes() {
-  // const [userName] = useState("");
+const TeacherClasses = () => {
+  const [classes, setClasses] = useState([
+    { id:1, subject:'CS201 · Data Structures', group:'04', endDate:'20 Jun 2026', mentor:true },
+    { id:2, subject:'CS201 · Data Structures', group:'07', endDate:'20 Jun 2026', mentor:false },
+    { id:3, subject:'CS301 · Algorithms', group:'04', endDate:'15 Jul 2026', mentor:true },
+    { id:4, subject:'CS401 · Compilers', group:'02', endDate:'10 Aug 2026', mentor:false },
+  ]);
+  const [form, setForm] = useState({ subject:'', group:'', endDate:'', mentor:true });
+  const set = (k) => (e) => setForm({...form, [k]:e.target.value});
 
-  const [subject, setSubject] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [group, setGroup] = useState("");
-  const [isMentor, setIsMentor] = useState("No");
-  const [classes, setClasses] = useState([]);
-  const [editIndex, setEditIndex] = useState(null);
-  const [selectedGroup, setSelectedGroup] = useState("");
-
-  const groups = Array.from({ length: 32 }, (_, i) => i + 1);
-
-  const subjects = [
-    "Advance Java",
-    "Data Structures",
-    "Machine Learning",
-    "Cyber Security",
-    "Cloud Computing",
-  ];
-
-  const handleAddOrUpdateClass = () => {
-    if (!subject || !endDate || !selectedGroup) {
-      toast.error("❌ Please fill all fields before adding/updating a class!");
-      return;
-    }
-
-    const newClass = { subject, endDate, group: selectedGroup, isMentor };
-
-    if (editIndex !== null) {
-      const updatedClasses = [...classes];
-      updatedClasses[editIndex] = newClass;
-      setClasses(updatedClasses);
-      toast.success("✅ Class updated successfully!");
-      setEditIndex(null);
-    } else {
-      setClasses([...classes, newClass]);
-      toast.success("✅ Class added successfully!");
-    }
-
-    // Reset form
-    setSubject("");
-    setEndDate("");
-    setSelectedGroup("");
-    setIsMentor("No");
+  const addClass = () => {
+    if (!form.subject || !form.group) return toast.error('Subject and group required');
+    setClasses([...classes, { id: Date.now(), ...form }]);
+    setForm({ subject:'', group:'', endDate:'', mentor:true });
+    toast.success('Class added');
   };
 
-  const handleDeleteClass = (index) => {
-    const updatedClasses = classes.filter((_, i) => i !== index);
-    setClasses(updatedClasses);
-    toast.success("🗑️ Class deleted successfully!");
-  };
-
-  const handleEditClass = (index) => {
-    const classToEdit = classes[index];
-    setSubject(classToEdit.subject);
-    setEndDate(classToEdit.endDate);
-    setSelectedGroup(classToEdit.group);
-    setIsMentor(classToEdit.isMentor);
-    setEditIndex(index);
+  const deleteClass = (id) => {
+    setClasses(classes.filter(c=>c.id!==id));
+    toast.success('Class removed');
   };
 
   return (
-    <div className="flex flex-col lg:flex-row">
-      <Sidebar />
-      <div className="flex-1 min-h-screen bg-gray-50 ml-0 custom:ml-64">
-        {/* ToastContainer inside page */}
-        <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover theme="colored" />
-
-        {/* Greeting Section */}
-        <div className="mx-auto mb-6 mt-20 max-w-7xl">
-          <div className="pt-10 px-16 w-100 mx-4 h-52 rounded-lg bg-gradient-to-r from-indigo-500 via-purple-500 to-purple-600">
-            <h1 className="text-white text-3xl lg:text-5xl font-bold mb-2">
-              Welcome back, <TeacherName/>!
-            </h1>
-            <p className="text-white text-sm lg:text-base">
-              Link Yourself to the Classes You Guide as a Mentor.
-            </p>
+    <>
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1.6fr', gap:14}}>
+        <div className="at-card">
+          <div className="at-card-h" style={{marginBottom:12}}>Add a class</div>
+          <div style={{display:'flex', flexDirection:'column', gap:12}}>
+            <Field label="Subject" required><input className="at-input" value={form.subject} onChange={set('subject')} placeholder="CS201 · Data Structures"/></Field>
+            <Field label="Group" required><input className="at-input" value={form.group} onChange={set('group')} placeholder="04"/></Field>
+            <Field label="Course end date" required><input className="at-input" type="date" value={form.endDate} onChange={set('endDate')}/></Field>
+            <Field label="I'm the mentor" required>
+              <div style={{display:'flex', gap:8}}>
+                <button className={`at-btn ghost sm`} style={{flex:1, ...(form.mentor?{borderColor:'var(--indigo-700)', color:'var(--indigo-700)'}:{})}} onClick={()=>setForm({...form,mentor:true})}>Yes</button>
+                <button className={`at-btn ghost sm`} style={{flex:1, ...(!form.mentor?{borderColor:'var(--indigo-700)', color:'var(--indigo-700)'}:{})}} onClick={()=>setForm({...form,mentor:false})}>No</button>
+              </div>
+            </Field>
+            <button className="at-btn primary block" onClick={addClass} style={{marginTop:6}}><I.plus size={12}/> Add class</button>
           </div>
         </div>
-
-        <div className="max-w-7xl mx-auto px-4">
-          {/* Add Class Section */}
-          <div className="bg-white shadow-md rounded-lg p-4 lg:p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">
-              {editIndex !== null ? "Edit Class" : "Add Class"}
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Subject Dropdown */}
-              <select
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="border p-2 rounded w-full"
-              >
-                <option value="" disabled>
-                  Select Subject
-                </option>
-                {subjects.map((sub, index) => (
-                  <option key={index} value={sub}>
-                    {sub}
-                  </option>
-                ))}
-              </select>
-
-              {/* Course End Date */}
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="border p-2 rounded w-full"
-              />
-
-              {/* Group Selection Dropdown */}
-              <select
-                value={selectedGroup}
-                onChange={(e) => setSelectedGroup(e.target.value)}
-                className="border p-2 rounded w-full"
-              >
-                <option value="" disabled>
-                  Select Group
-                </option>
-                {groups.map((group) => (
-                  <option key={group} value={group}>
-                    {group}
-                  </option>
-                ))}
-              </select>
-
-              {/* Mentor Selection */}
-              <select
-                value={isMentor}
-                onChange={(e) => setIsMentor(e.target.value)}
-                className="border p-2 rounded w-full"
-              >
-                <option value="No">Not a Mentor</option>
-                <option value="Yes">Mentor</option>
-              </select>
+        <div>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10}}>
+            <div className="at-card-h">{classes.length} active classes</div>
+          </div>
+          {classes.map(c => (
+            <div key={c.id} className="at-card" style={{padding:'12px 16px', marginBottom:8, display:'flex', alignItems:'center', gap:14, flexWrap:'wrap'}}>
+              <div style={{width:36, height:36, borderRadius:8, background:'var(--indigo-50)', color:'var(--indigo-700)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--ff-display)', fontSize:16, flexShrink:0}}>{(c.subject.split('·')[1]||c.subject)[1]}</div>
+              <div style={{flex:1, minWidth:150}}>
+                <div style={{fontSize:13, fontWeight:500}}>{c.subject}</div>
+                <div style={{fontSize:11.5, color:'var(--ink-3)'}}>Group {c.group} · ends {c.endDate} · mentor: {c.mentor?'Yes':'No'}</div>
+              </div>
+              {c.mentor && <span className="at-pill">Mentor</span>}
+              <button className="at-btn ghost sm" style={{color:'var(--err)', borderColor:'#FCA5A5'}} onClick={()=>deleteClass(c.id)}><I.trash size={11}/></button>
             </div>
-
-            {/* Add or Update Button */}
-            <button
-              onClick={handleAddOrUpdateClass}
-              className="mt-4 bg-blue-600 text-white w-full sm:w-auto px-6 py-2 rounded"
-            >
-              {editIndex !== null ? "Update" : "Add"}
-            </button>
-          </div>
-
-          {/* Class List Section */}
-          <div className="bg-white shadow-md rounded-lg p-4 lg:p-6 tablet:mb-0 mb-10">
-            <h2 className="text-lg font-semibold mb-4">Class List</h2>
-            {classes.length > 0 ? (
-              <ul className="border rounded-lg divide-y">
-                {classes.map((cls, index) => (
-                  <li
-                    key={index}
-                    className="p-3 flex flex-wrap gap-4 justify-between items-center"
-                  >
-                    <span className="w-full sm:w-auto">{cls.subject}</span>
-                    <span className="w-full sm:w-auto">End Date: {cls.endDate}</span>
-                    <span className="w-full sm:w-auto">Group: {cls.group}</span>
-                    <span className="w-full sm:w-auto">
-                      {cls.isMentor === "Yes" ? "Mentor" : "Not a Mentor"}
-                    </span>
-                    <div className="flex gap-2 w-full sm:w-auto">
-                      <button
-                        onClick={() => handleEditClass(index)}
-                        className="bg-yellow-500 text-white px-4 py-1 rounded w-full sm:w-auto"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClass(index)}
-                        className="bg-red-500 text-white px-4 py-1 rounded w-full sm:w-auto"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-gray-500 text-center">No classes added yet.</p>
-            )}
-          </div>
+          ))}
         </div>
       </div>
-    </div>
+      <style>{`@media(max-width:768px){.at-card:first-child+div{grid-template-columns:1fr!important}}`}</style>
+    </>
   );
-}
+};
 
-export default Classes;
+export default TeacherClasses;

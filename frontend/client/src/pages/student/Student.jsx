@@ -1,131 +1,94 @@
-"use client";
-import { SidebarStudent } from "../../components/SidebarStudent";
-import StudentName from "../../components/ProfileNameStudent";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, LineChart, Line
-} from "recharts";
-import { TrendingUp, BookOpen, ClipboardList } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import axios from 'axios';
+import { I } from '../../components/Icons';
+import { BarChart, LineChart } from '../../components/Charts';
+import { API_URL } from '../../config/api';
+import { toast } from '../../components/Toast';
 
-const subjectPerformance = [
-  { subject: "Math", score: 88 },
-  { subject: "Science", score: 92 },
-  { subject: "English", score: 85 },
-  { subject: "History", score: 78 },
-  { subject: "Art", score: 95 },
-];
+const StudentDashboard = () => {
+  const [student, setStudent] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-const attendanceTrend = [
-  { date: "Mon", attendance: 1 },
-  { date: "Tue", attendance: 1 },
-  { date: "Wed", attendance: 0 },
-  { date: "Thu", attendance: 1 },
-  { date: "Fri", attendance: 1 },
-];
+  useEffect(() => {
+    axios.get(`${API_URL}/api/student/details`, { withCredentials: true })
+      .then(res => setStudent(res.data.student || res.data))
+      .catch(() => toast.error('Failed to load dashboard'))
+      .finally(() => setLoading(false));
+  }, []);
 
-const statCards = [
-  {
-    label: "Overall Score",
-    value: "A+",
-    sub: "+2.4% from last term",
-    icon: TrendingUp,
-    iconBg: "bg-emerald-50",
-    iconColor: "text-emerald-600",
-    subColor: "text-emerald-600",
-  },
-  {
-    label: "Attendance Rate",
-    value: "91.3%",
-    sub: "On track this semester",
-    icon: ClipboardList,
-    iconBg: "bg-[#f3f0ff]",
-    iconColor: "text-[#3b1e8a]",
-    subColor: "text-[#3b1e8a]",
-  },
-  {
-    label: "Assignments",
-    value: "24",
-    sub: "3 Upcoming Assignments",
-    icon: BookOpen,
-    iconBg: "bg-[#f3f0ff]",
-    iconColor: "text-[#6d4ed7]",
-    subColor: "text-[#6d4ed7]",
-  },
-];
+  const name = student?.name?.split(' ')[0] || 'Student';
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const dateStr = new Date().toLocaleDateString('en-US', { weekday:'long', day:'numeric', month:'long' });
 
-export default function Student() {
+  const subjectData = [
+    { label:'Math', value:87 }, { label:'CS', value:94 }, { label:'Phys', value:78 },
+    { label:'Chem', value:82 }, { label:'Eng', value:91 }, { label:'Hist', value:74 },
+  ];
+  const weeklyData = [
+    { label:'Mon', value:5 }, { label:'Tue', value:4 }, { label:'Wed', value:6 },
+    { label:'Thu', value:5 }, { label:'Fri', value:3 }, { label:'Sat', value:2 },
+  ];
+
+  if (loading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'100%'}}><div className="at-spinner"/></div>;
+
   return (
-    <div className="flex">
-      <SidebarStudent />
-      <div className="flex-1 min-h-screen bg-[#f7f8fc] pt-14 ml-0 custom:ml-64">
-        <div className="max-w-7xl mx-auto px-6 md:px-10 py-10">
-          {/* Welcome */}
-          <div className="mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-[#1a1535] tracking-tight">
-              Welcome back, <span className="text-[#3b1e8a]"><StudentName /></span>!
-            </h1>
-            <p className="text-[#9b93be] mt-1.5 text-sm">
-              Here's your academic snapshot and attendance summary.
-            </p>
-          </div>
-
-          {/* Stat Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-7">
-            {statCards.map((card) => {
-              const Icon = card.icon;
-              return (
-                <div key={card.label} className="bg-white p-5 rounded-xl border border-[#e8e6f0] shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="text-xs font-semibold text-[#9b93be] uppercase tracking-wider">{card.label}</p>
-                      <p className="mt-1.5 text-3xl font-bold text-[#1a1535]">{card.value}</p>
-                    </div>
-                    <div className={`${card.iconBg} p-2.5 rounded-lg`}>
-                      <Icon size={18} className={card.iconColor} />
-                    </div>
-                  </div>
-                  <p className={`text-xs font-medium ${card.subColor}`}>{card.sub}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Charts */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="bg-white p-6 rounded-xl border border-[#e8e6f0] shadow-sm">
-              <h2 className="text-base font-bold text-[#1a1535] mb-5">Subject Performance</h2>
-              <div className="h-[260px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={subjectPerformance} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e8e6f0" />
-                    <XAxis dataKey="subject" tick={{ fill: "#9b93be", fontSize: 12 }} axisLine={{ stroke: "#e8e6f0" }} tickLine={false} />
-                    <YAxis tick={{ fill: "#9b93be", fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <Tooltip cursor={{ fill: "#f7f5ff" }} contentStyle={{ borderRadius: "8px", border: "1px solid #e8e6f0", fontSize: "12px", fontFamily: "Inter, sans-serif" }} />
-                    <Bar dataKey="score" fill="#3b1e8a" radius={[4, 4, 0, 0]} barSize={36} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-xl border border-[#e8e6f0] shadow-sm">
-              <h2 className="text-base font-bold text-[#1a1535] mb-5">Weekly Attendance</h2>
-              <div className="h-[260px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={attendanceTrend} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e8e6f0" />
-                    <XAxis dataKey="date" tick={{ fill: "#9b93be", fontSize: 12 }} axisLine={{ stroke: "#e8e6f0" }} tickLine={false} />
-                    <YAxis domain={[0, 1]} tickFormatter={(t) => t === 1 ? "P" : "A"} tick={{ fill: "#9b93be", fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid #e8e6f0", fontSize: "12px", fontFamily: "Inter, sans-serif" }} />
-                    <Line type="monotone" dataKey="attendance" stroke="#3b1e8a" strokeWidth={2.5}
-                      dot={{ r: 4, fill: "#3b1e8a", strokeWidth: 2, stroke: "#ffffff" }}
-                      activeDot={{ r: 5 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
+    <>
+      <div style={{marginBottom:20}}>
+        <div className="at-serif" style={{fontSize:32, letterSpacing:'-0.02em'}}>{greeting}, {name}.</div>
+        <div style={{color:'var(--ink-3)', fontSize:13, marginTop:4}}>{dateStr}</div>
+      </div>
+      <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:14, marginBottom:20}}>
+        <div className="at-stat">
+          <div className="at-stat-label">Overall score</div>
+          <div className="at-stat-value" style={{color:'var(--indigo-700)'}}>A+</div>
+          <div className="at-stat-sub"><span className="at-stat-delta up">&uarr; 0.3</span> vs last term</div>
+        </div>
+        <div className="at-stat">
+          <div className="at-stat-label">Attendance</div>
+          <div className="at-stat-value">91.3<span style={{fontSize:22, color:'var(--ink-3)'}}>%</span></div>
+          <div className="at-stat-sub"><span className="at-stat-delta up">&uarr; 2.1</span> 4 classes missed</div>
+        </div>
+        <div className="at-stat">
+          <div className="at-stat-label">Assignments</div>
+          <div className="at-stat-value">12<span style={{fontSize:22, color:'var(--ink-3)'}}>/14</span></div>
+          <div className="at-stat-sub">2 pending &middot; next due Friday</div>
         </div>
       </div>
-    </div>
+      <div style={{display:'grid', gridTemplateColumns:'1.3fr 1fr', gap:14}}>
+        <div className="at-card">
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:8}}>
+            <div><div className="at-card-title">Subject performance</div><div className="at-card-h">Marks out of 100</div></div>
+            <div className="at-pill">This term</div>
+          </div>
+          <div style={{marginTop:14}}><BarChart data={subjectData} max={100} color="var(--indigo-700)"/></div>
+        </div>
+        <div className="at-card">
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', flexWrap:'wrap', gap:8}}>
+            <div><div className="at-card-title">This week</div><div className="at-card-h">Classes attended</div></div>
+            <div className="at-pill">25 / 30</div>
+          </div>
+          <div style={{marginTop:14}}><LineChart data={weeklyData}/></div>
+        </div>
+      </div>
+      <div className="at-card" style={{marginTop:14}}>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10, flexWrap:'wrap', gap:8}}>
+          <div className="at-card-h">Up next</div>
+          <Link to="/student/timetable" style={{fontSize:12, color:'var(--indigo-700)'}}>View timetable &rarr;</Link>
+        </div>
+        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:10}}>
+          {[['14:00','Data Structures','Dr. Iyer \u00b7 Room 302','now'],['15:30','Computer Networks','Prof. Rao \u00b7 Lab B','in 90m'],['17:00','English','Ms. Lall \u00b7 Room 118','in 3h']].map((r,i)=>(
+            <div key={i} style={{border:'1px solid var(--line)', borderRadius:8, padding:12, background: i===0?'var(--indigo-50)':'transparent'}}>
+              <div className="at-mono" style={{fontSize:11, color:'var(--ink-3)'}}>{r[0]} &middot; {r[3]}</div>
+              <div style={{fontSize:13, fontWeight:500, marginTop:4}}>{r[1]}</div>
+              <div style={{fontSize:11.5, color:'var(--ink-3)'}}>{r[2]}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
-}
+};
+
+export default StudentDashboard;

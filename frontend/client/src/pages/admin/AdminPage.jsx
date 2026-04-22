@@ -1,177 +1,137 @@
-import { useState } from "react";
-import axios from "axios";
-import { ADMIN_API as API, API_URL } from "../../config/api";
-import { Link, useNavigate } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { FileSpreadsheet, UploadCloud, LogOut, CheckCircle } from "lucide-react";
+import React, { useState, useRef } from 'react';
+import axios from 'axios';
+import { I } from '../../components/Icons';
+import { toast } from '../../components/Toast';
+import { API_URL } from '../../config/api';
 
-const AdminPage = () => {
-    const [file, setFile] = useState(null);
-    const [uploading, setUploading] = useState(false);
-    const [message, setMessage] = useState("");
-    const [dragOver, setDragOver] = useState(false);
-    const navigate = useNavigate();
+const AdminDashboard = () => {
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+  const fileRef = useRef(null);
 
-    const handleLogout = async () => {
-        try {
-            await axios.post(`${API_URL}/api/admin/logout`, {}, { withCredentials: true });
-            toast.success("Logged out successfully");
-            setTimeout(() => navigate("/admin/login"), 800);
-        } catch (err) {
-            document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-            navigate("/admin/login");
-        }
-    };
+  const handleFile = (f) => {
+    if (!f) return;
+    if (!/\.xlsx?$/.test(f.name)) return toast.error('Only .xlsx or .xls files allowed');
+    setFile(f);
+    setResult(null);
+  };
 
-    const handleFileChange = (e) => {
-        const selectedFile = e.target.files?.[0];
-        if (selectedFile) {
-            setFile(selectedFile);
-            setMessage("");
-        }
-    };
+  const process = async () => {
+    if (!file) return toast.error('Select a file first');
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await axios.post(`${API_URL}/api/admin/generatecredentials`, fd, { headers:{'Content-Type':'multipart/form-data'}, withCredentials:true });
+      setResult(res.data);
+      toast.success(res.data.message || 'Credentials generated!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Processing failed');
+    } finally { setUploading(false); }
+  };
 
-    const handleDrop = (e) => {
-        e.preventDefault();
-        setDragOver(false);
-        const dropped = e.dataTransfer.files[0];
-        if (dropped?.name?.match(/\.xlsx?$/)) {
-            setFile(dropped);
-            setMessage("");
-        }
-    };
+  const ds = {bg:'#131B2E', border:'#1F2A45', text:'#E6E8EE', muted:'#8B93A7', dim:'#6B738A'};
 
-    const handleUpload = async () => {
-        if (!file) { 
-            setMessage("Please select a file first."); 
-            return; 
-        }
-        setUploading(true);
-        setMessage("");
-        const formData = new FormData();
-        formData.append("file", file);
-        try {
-            const response = await axios.post(API.GENERATE_CREDENTIALS, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-            
-            const { message: msg, usersCreated, totalRows, warnings } = response.data;
-            let displayMessage = `✓ ${msg}`;
-            
-            if (usersCreated > 0) {
-                displayMessage += ` (${usersCreated}/${totalRows} rows processed successfully)`;
-            }
-            
-            if (warnings && warnings.length > 0) {
-                displayMessage += `\n\n⚠ Issues found:\n${warnings.join('\n')}`;
-            }
-            
-            setMessage(displayMessage);
-            setFile(null);
-        } catch (error) { 
-            console.error("Upload error:", error);
-            const errorMsg = error.response?.data?.error || "Error uploading file.";
-            setMessage(`❌ ${errorMsg}`); 
-        }
-        finally { 
-            setUploading(false); 
-        }
-    };
+  return (
+    <>
+      <div style={{display:'grid', gridTemplateColumns:'1.2fr 1fr', gap:16, marginBottom:16}}>
+        <div style={{border:`1px solid ${ds.border}`, borderRadius:10, padding:22, background:ds.bg}}>
+          <div style={{fontSize:11, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6366F1', marginBottom:8}}>Bulk onboard</div>
+          <div className="at-serif" style={{fontSize:28, letterSpacing:'-0.02em', color:'#fff'}}>Upload a roster. We'll do the rest.</div>
+          <div style={{color:ds.muted, fontSize:13, marginTop:8, maxWidth:480}}>One row per person. We create accounts, email credentials, and enroll students automatically.</div>
 
-    return (
-        <div className="flex">
-            {/* Admin Sidebar */}
-            <nav className="bg-slate-900 text-slate-200 w-64 min-h-screen flex flex-col static top-0 left-0 hidden custom:flex shadow-xl z-10 border-r border-slate-800">
-                <ToastContainer position="top-right" autoClose={2000} theme="colored" />
-                <div className="px-6 py-6 border-b border-slate-800">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center text-white font-bold text-sm border border-slate-600">A</div>
-                        <div>
-                            <h2 className="text-base font-bold tracking-tight text-white">Attentify</h2>
-                            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-medium">Admin Panel</p>
-                        </div>
-                    </div>
-                </div>
-                <ul className="flex-1 px-3 py-4 space-y-0.5 text-sm font-medium">
-                    <li>
-                        <Link to="/admin">
-                            <span className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-blue-600 text-white font-semibold">
-                                <FileSpreadsheet size={16} /> Credential Generator
-                            </span>
-                        </Link>
-                    </li>
-                </ul>
-                <div className="px-3 pb-6 border-t border-slate-800 pt-4">
-                    <button onClick={handleLogout} className="w-full">
-                        <span className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-red-900/30 hover:text-red-400 transition-all text-sm font-medium group">
-                            <LogOut size={16} className="text-slate-500 group-hover:text-red-400" />Logout
-                        </span>
-                    </button>
-                </div>
-            </nav>
+          <div
+            style={{border:`1.5px dashed ${dragOver?'#6366F1':ds.border}`, borderRadius:10, padding:36, textAlign:'center', marginTop:22, background:'#0F1628', cursor:'pointer'}}
+            onClick={()=>fileRef.current?.click()}
+            onDragOver={e=>{e.preventDefault();setDragOver(true)}}
+            onDragLeave={()=>setDragOver(false)}
+            onDrop={e=>{e.preventDefault();setDragOver(false);handleFile(e.dataTransfer.files[0])}}
+          >
+            <div style={{width:42, height:42, borderRadius:'50%', background:ds.border, margin:'0 auto 12px', display:'flex', alignItems:'center', justifyContent:'center', color:'#6366F1'}}><I.upload size={18}/></div>
+            <div style={{fontSize:14, color:ds.text, marginBottom:4}}>Drag & drop or <span style={{color:'#6366F1'}}>click to browse</span></div>
+            <div style={{fontSize:11.5, color:ds.dim}}>.xlsx or .xls · columns: email, name, role</div>
+          </div>
+          <input ref={fileRef} type="file" accept=".xlsx,.xls" style={{display:'none'}} onChange={e=>handleFile(e.target.files[0])}/>
 
-            <div className="flex-1 min-h-screen bg-slate-50">
-                <div className="max-w-3xl mx-auto px-6 md:px-10 py-10">
-                    <div className="mb-8 border-b border-slate-200 pb-6">
-                        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight font-serif">Credential Generator</h1>
-                        <p className="text-slate-500 mt-1.5 text-sm">Upload an Excel sheet to bulk-generate login credentials for users.</p>
-                    </div>
-
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8">
-                        <h2 className="text-base font-bold text-slate-800 mb-6 flex items-center gap-2">
-                            <FileSpreadsheet size={18} className="text-blue-600" /> Upload Excel File
-                        </h2>
-
-                        {/* Drop Zone */}
-                        <div
-                            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                            onDragLeave={() => setDragOver(false)}
-                            onDrop={handleDrop}
-                            className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-all cursor-pointer mb-6 ${
-                                dragOver ? "border-blue-400 bg-blue-50" : file ? "border-emerald-400 bg-emerald-50/50" : "border-slate-300 hover:border-blue-300 bg-slate-50 hover:bg-blue-50/30"
-                            }`}>
-                            <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer">
-                                {file ? (
-                                    <>
-                                        <CheckCircle className="text-emerald-500 mb-3" size={36} />
-                                        <p className="text-sm font-semibold text-emerald-700 mb-1">{file.name}</p>
-                                        <p className="text-xs text-slate-500">{(file.size / 1024).toFixed(1)} KB · Ready to upload</p>
-                                    </>
-                                ) : (
-                                    <>
-                                        <UploadCloud className="text-slate-400 mb-3" size={36} />
-                                        <p className="text-sm font-semibold text-slate-700 mb-1">Drag & drop or click to browse</p>
-                                        <p className="text-xs text-slate-400">Supports .xlsx and .xls files</p>
-                                    </>
-                                )}
-                                <input 
-                                    type="file" 
-                                    accept=".xlsx, .xls" 
-                                    onChange={handleFileChange}
-                                    className="hidden" 
-                                />
-                            </label>
-                        </div>
-
-                        <button 
-                            onClick={handleUpload} 
-                            disabled={uploading || !file}
-                            className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                            {uploading ? "Uploading..." : "Upload & Generate Credentials"}
-                        </button>
-
-                        {message && (
-                            <div className={`mt-5 p-4 rounded-lg border text-sm whitespace-pre-wrap ${message.includes("❌") ? "bg-red-50 border-red-200 text-red-700" : "bg-emerald-50 border-emerald-200 text-emerald-700"}`}>
-                                <p className="font-semibold mb-2">Status</p>
-                                <p>{message}</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
+          {file && (
+            <div style={{marginTop:14, border:`1px solid ${ds.border}`, borderRadius:8, padding:'12px 14px', background:'#0F1628', display:'flex', alignItems:'center', gap:12}}>
+              <div style={{width:32, height:38, borderRadius:4, background:ds.border, display:'flex', alignItems:'center', justifyContent:'center', color:'#10B981'}}><I.file size={15}/></div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:13, color:ds.text}}>{file.name} <span className="at-mono" style={{color:ds.dim, fontSize:11}}>· {(file.size/1024).toFixed(0)} KB</span></div>
+                <div style={{fontSize:11, color:ds.dim}}>Ready to process</div>
+              </div>
+              <span className="at-badge approved"><I.check size={11}/> Ready</span>
             </div>
+          )}
+          <div style={{display:'flex', gap:8, marginTop:12}}>
+            <button className="at-btn ghost" style={{borderColor:ds.border, color:'#C5CADB', background:'transparent'}} onClick={()=>{setFile(null);setResult(null)}}>Replace</button>
+            <button className="at-btn block" style={{background:'#6366F1', borderColor:'#6366F1'}} onClick={process} disabled={uploading || !file}>
+              {uploading ? 'Processing...' : `Process${file?' file':''}`} {!uploading && <I.arrow size={12}/>}
+            </button>
+          </div>
         </div>
-    );
+
+        <div style={{display:'flex', flexDirection:'column', gap:12}}>
+          {result && (
+            <div style={{border:`1px solid ${ds.border}`, borderRadius:10, padding:16, background:ds.bg}}>
+              <div style={{fontSize:10.5, letterSpacing:'0.08em', textTransform:'uppercase', color:ds.dim, marginBottom:8}}>Last upload</div>
+              <div style={{display:'flex', alignItems:'baseline', gap:6}}>
+                <div className="at-serif" style={{fontSize:36, letterSpacing:'-0.02em', color:'#fff'}}>{result.usersCreated||0}</div>
+                <div style={{color:ds.muted, fontSize:12}}>/ {result.totalRows||0} rows processed</div>
+              </div>
+              <div style={{height:6, background:ds.border, borderRadius:3, marginTop:10, overflow:'hidden'}}>
+                <div style={{width:`${result.totalRows?((result.usersCreated/result.totalRows)*100):0}%`, height:'100%', background:'linear-gradient(90deg, #6366F1, #10B981)'}}/>
+              </div>
+              <div style={{display:'flex', justifyContent:'space-between', marginTop:10, fontSize:11.5}}>
+                <span style={{color:'#10B981'}}>✓ {result.usersCreated} created</span>
+                <span style={{color:'#F59E0B'}}>⚠ {(result.warnings||[]).length} warnings</span>
+              </div>
+            </div>
+          )}
+
+          <div style={{border:`1px solid ${ds.border}`, borderRadius:10, padding:16, background:ds.bg, flex:1}}>
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10}}>
+              <div style={{fontSize:10.5, letterSpacing:'0.08em', textTransform:'uppercase', color:ds.dim}}>Response log</div>
+              <span className="at-mono" style={{fontSize:10, color:ds.dim}}>—</span>
+            </div>
+            <div style={{fontFamily:'var(--ff-mono)', fontSize:11.5, lineHeight:1.7, color:'#C5CADB'}}>
+              {result ? (
+                <>
+                  <div style={{color:'#10B981'}}>✓ {result.usersCreated} / {result.totalRows} rows processed</div>
+                  {(result.warnings||[]).length > 0 && (
+                    <>
+                      <div style={{marginTop:10, color:'#F59E0B'}}>⚠ {result.warnings.length} warnings:</div>
+                      <div style={{marginLeft:14, color:ds.muted, fontSize:11}}>
+                        {result.warnings.slice(0,4).map((w,i) => <div key={i}>{w}</div>)}
+                        {result.warnings.length > 4 && <div style={{color:ds.dim}}>+{result.warnings.length-4} more...</div>}
+                      </div>
+                    </>
+                  )}
+                  <div style={{marginTop:10, color:ds.dim}}>→ credentials emailed to {result.usersCreated} users</div>
+                </>
+              ) : (
+                <div style={{color:ds.dim}}>No uploads yet. Process a file to see results.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))', gap:12}}>
+        {[['Total students','—','','#6366F1'],['Total faculty','—','','#10B981'],['Groups active','—','','#F59E0B'],['Uploads · 30d','—','','#EC4899']].map(([l,v,s,c],i)=>(
+          <div key={i} style={{border:`1px solid ${ds.border}`, borderRadius:10, padding:'14px 16px', background:ds.bg}}>
+            <div style={{fontSize:10.5, letterSpacing:'0.08em', textTransform:'uppercase', color:ds.dim}}>{l}</div>
+            <div className="at-serif" style={{fontSize:28, letterSpacing:'-0.02em', color:'#fff', margin:'8px 0 4px'}}>{v}</div>
+            <div style={{fontSize:11, color:c}}>{s}</div>
+          </div>
+        ))}
+      </div>
+
+      <style>{`@media(max-width:768px){.at-body>div:first-child{grid-template-columns:1fr!important}}`}</style>
+    </>
+  );
 };
 
-export default AdminPage;
+export default AdminDashboard;

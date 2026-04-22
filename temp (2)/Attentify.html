@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Attentify — Full Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css"/>
+<style>html,body{margin:0;padding:0;height:100%;background:#f0eee9}</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="icons.jsx"></script>
+<script type="text/babel" src="primitives.jsx"></script>
+<script type="text/babel" src="screens-public-student.jsx"></script>
+<script type="text/babel" src="screens-teacher.jsx"></script>
+<script type="text/babel" src="screens-admin.jsx"></script>
+
+<script type="text/babel" data-presets="env,react">
+const W = 1280, H = 800;
+
+function App() {
+  return (
+    <DesignCanvas>
+      <DCSection id="public" title="Public" subtitle="Marketing, error pages, shared">
+        <DCArtboard id="landing" label="Landing" width={W} height={H}><Landing/></DCArtboard>
+        <DCArtboard id="404" label="404 · Not found" width={W} height={H}><NotFound/></DCArtboard>
+        <DCArtboard id="error" label="Error boundary" width={W} height={H}><ErrorBoundary/></DCArtboard>
+      </DCSection>
+
+      <DCSection id="student-auth" title="Student · Onboarding" subtitle="Register in 3 steps, with email + SMS OTP">
+        <DCArtboard id="s-login" label="Login" width={W} height={H}><StudentLogin/></DCArtboard>
+        <DCArtboard id="s-register" label="Register · Step 1 (credentials)" width={W} height={H}><StudentRegister/></DCArtboard>
+        <DCArtboard id="s-otp" label="OTP verification (email + SMS)" width={W} height={H}><OTPVerification role="student"/></DCArtboard>
+        <DCArtboard id="s-register2" label="Register · Step 2 (academic)" width={W} height={H}><StudentRegister2/></DCArtboard>
+        <DCArtboard id="s-face" label="Register · Step 3 (face capture)" width={W} height={H}><StudentFaceCapture/></DCArtboard>
+        <DCArtboard id="s-forgot" label="Forgot / Reset password" width={W} height={H}><StudentForgot/></DCArtboard>
+      </DCSection>
+
+      <DCSection id="student-app" title="Student · App" subtitle="The everyday view — after login">
+        <DCArtboard id="s-dash" label="Dashboard" width={W} height={H}><StudentDashboard/></DCArtboard>
+        <DCArtboard id="s-att" label="Attendance" width={W} height={H}><StudentAttendance/></DCArtboard>
+        <DCArtboard id="s-profile" label="Profile · view" width={W} height={H}><StudentProfile/></DCArtboard>
+        <DCArtboard id="s-profile-edit" label="Profile · edit mode" width={W} height={H}><StudentProfile edit/></DCArtboard>
+        <DCArtboard id="s-med" label="Medical leave" width={W} height={H}><StudentMedical/></DCArtboard>
+        <DCArtboard id="s-time" label="Timetable" width={W} height={H}><StudentTimetable/></DCArtboard>
+      </DCSection>
+
+      <DCSection id="teacher-auth" title="Teacher · Auth" subtitle="Faculty badge · forced password reset on first login">
+        <DCArtboard id="t-login" label="Login" width={W} height={H}><TeacherLogin/></DCArtboard>
+        <DCArtboard id="t-forgot" label="Forgot / Reset" width={W} height={H}><TeacherForgot/></DCArtboard>
+      </DCSection>
+
+      <DCSection id="teacher-app" title="Teacher · App" subtitle="The signature flow is 'Take attendance' — face recognition in real time">
+        <DCArtboard id="t-dash" label="Dashboard" width={W} height={H}><TeacherDashboard/></DCArtboard>
+        <DCArtboard id="t-take" label="Take attendance (live face recognition)" width={W} height={H}><TakeAttendance/></DCArtboard>
+        <DCArtboard id="t-edit" label="Edit attendance" width={W} height={H}><EditAttendance/></DCArtboard>
+        <DCArtboard id="t-sheet" label="Generate sheet" width={W} height={H}><GenerateSheet/></DCArtboard>
+        <DCArtboard id="t-classes" label="My classes" width={W} height={H}><TeacherClasses/></DCArtboard>
+        <DCArtboard id="t-students" label="Student list" width={W} height={H}><StudentList/></DCArtboard>
+        <DCArtboard id="t-medical" label="Medical leave (approve / reject)" width={W} height={H}><MedicalReport/></DCArtboard>
+        <DCArtboard id="t-time" label="Timetable management" width={W} height={H}><TeacherTimetable/></DCArtboard>
+        <DCArtboard id="t-profile" label="Profile" width={W} height={H}><TeacherProfile/></DCArtboard>
+      </DCSection>
+
+      <DCSection id="admin" title="Admin" subtitle="Dark console · bulk roster upload is the only job">
+        <DCArtboard id="a-login" label="Login (restricted access)" width={W} height={H}><AdminLogin/></DCArtboard>
+        <DCArtboard id="a-otp" label="OTP verification" width={W} height={H}><AdminOTP/></DCArtboard>
+        <DCArtboard id="a-dash" label="Credential generator" width={W} height={H}><AdminDashboard/></DCArtboard>
+        <DCArtboard id="a-forgot" label="Forgot / Reset" width={W} height={H}><AdminForgot/></DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
